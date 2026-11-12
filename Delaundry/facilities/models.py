@@ -14,6 +14,10 @@ class Residence(models.Model):
       ('sheares', 'Sheares Hall'),
       ('temasek', 'Temasek Hall')
   ])
+  is_active = models.BooleanField(default=True) # just for admin control
+
+  def __str__(self):
+    return self.get_name_display()
 
 
 class LaundryRoom(models.Model):

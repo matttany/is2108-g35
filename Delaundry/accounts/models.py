@@ -17,13 +17,14 @@ class User(AbstractUser):
   #   role="customer",
   # )
 
+  # contains is_staff (access to built-in admin) and is_superuser (all permissions granted)
+
 class CustomerProfile(models.Model):
   user = models.OneToOneField(User, on_delete=models.CASCADE)
   residence = models.ForeignKey('facilities.Residence', on_delete=models.PROTECT)
   
   id = models.AutoField(primary_key=True)
   unitNum = models.CharField(max_length=8)
-  phoneNum = models.CharField(max_length=12)
   # pickup note?
 
 class WorkerProfile(models.Model):
@@ -31,7 +32,6 @@ class WorkerProfile(models.Model):
   residence = models.ForeignKey('facilities.Residence', on_delete=models.PROTECT)
 
   id = models.AutoField(primary_key=True)
-  phoneNum = models.CharField(max_length=12)
   is_available = models.BooleanField(default=True)
 
   # checks whether they are an existing student in nus, will require approval by admin
