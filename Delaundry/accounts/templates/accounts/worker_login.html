@@ -2,7 +2,6 @@
 {% block title %}Worker login | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Worker login</h1>
-  <p class="text-secondary">Log in to check your application and account status.</p>
   <form method="post" action="{% url 'accounts:worker_login' %}">
     {% csrf_token %}
     {% include "accounts/worker_form_fields.html" %}

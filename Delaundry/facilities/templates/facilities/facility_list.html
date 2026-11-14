@@ -1,0 +1,50 @@
+﻿{% extends "adminpanel/base.html" %}
+
+{% block title %}Facilities | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1>Facilities</h1>
+  <p>
+    Click a machine code to edit its availability.
+    <span class="text-success">Green: Active.</span>
+    <span class="text-danger">Red: Out of service.</span>
+  </p>
+
+  <ul>
+    {% for residence in residences %}
+    <li class="mb-4">
+      <strong>{{ residence }}</strong>
+
+      <ul>
+        {% for room in residence.rooms %}
+        <li class="mb-3">
+          {{ room.get_block_display }} -
+          {% if room.is_active %}
+          <span class="text-success">Active</span>
+          {% else %}
+          <span class="text-danger">Inactive</span>
+          {% endif %}
+          (<a href="{% url 'facilities:room_status' room_id=room.pk %}">Edit availability</a>)
+
+          <div class="table-responsive mt-2">
+            <table class="table table-bordered text-center w-auto">
+              <caption class="visually-hidden">
+                Machines in {{ room }}
+              </caption>
+              <tbody>
+                {% include "facilities/machine_row.html" with machines=room.washers %}
+                {% include "facilities/machine_row.html" with machines=room.dryers %}
+              </tbody>
+            </table>
+          </div>
+        </li>
+        {% empty %}
+        <li>No laundry rooms recorded.</li>
+        {% endfor %}
+      </ul>
+    </li>
+    {% empty %}
+    <li>No halls recorded.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

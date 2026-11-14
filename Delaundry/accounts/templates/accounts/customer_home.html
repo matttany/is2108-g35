@@ -8,6 +8,8 @@
 
   <form method="post" action="{% url 'accounts:logout' %}">
     {% csrf_token %}
-    <button type="submit">Log out</button>
+    <button class="btn btn-outline-secondary" type="submit">
+      Log out
+    </button>
   </form>
 {% endblock %}

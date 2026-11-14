@@ -1,0 +1,16 @@
+<tr>
+  {% for machine in machines %}
+  <td>
+    <a href="{% url 'facilities:machine_status' machine_id=machine.pk %}"
+      class="fw-bold {% if machine.status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}"
+      title="{{ machine.get_status_display }}">
+      {{ machine.code }}
+      <span class="visually-hidden">
+        - {{ machine.get_status_display }}
+      </span>
+    </a>
+  </td>
+  {% empty %}
+  <td colspan="10">No machines recorded.</td>
+  {% endfor %}
+</tr>
