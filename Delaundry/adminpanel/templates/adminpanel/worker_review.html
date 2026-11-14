@@ -1,0 +1,40 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Review worker | DeLaundry{% endblock %}
+{% block content %}
+  <a href="{% url 'adminpanel:worker_list' %}">Back to worker applications</a>
+  <div class="row mt-3 g-4">
+    <div class="col-12 col-lg-7">
+      <div class="card h-100">
+        <div class="card-body">
+          <h1 class="h3">Review {{ worker.user.name }}</h1>
+          <dl class="row mt-3">
+            <dt class="col-sm-4">Name</dt><dd class="col-sm-8">{{ worker.user.name }}</dd>
+            <dt class="col-sm-4">NUS email</dt><dd class="col-sm-8">{{ worker.user.email }}</dd>
+            <dt class="col-sm-4">Hall</dt><dd class="col-sm-8">{{ worker.residence }}</dd>
+            <dt class="col-sm-4">Registered on</dt><dd class="col-sm-8">{{ worker.user.date_joined|date:"d M Y, H:i" }}</dd>
+            <dt class="col-sm-4">Account</dt><dd class="col-sm-8">{{ worker.user.is_active|yesno:"Active,Inactive" }}</dd>
+            <dt class="col-sm-4">Approval status</dt><dd class="col-sm-8">{{ worker.get_approval_status_display }}</dd>
+            <dt class="col-sm-4">Availability</dt><dd class="col-sm-8">{{ worker.is_available|yesno:"Available,Unavailable" }}</dd>
+          </dl>
+          {% if not worker.user.is_active %}
+            <div class="alert alert-warning">This account is inactive. It cannot be approved for new work.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-5">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="h4">Approval decision</h2>
+          <p>Verify the worker's student eligibility before approving the application.</p>
+          <p class="text-secondary">Suspension blocks eligibility for new jobs while keeping the account and previous work records.</p>
+          <form method="post" action="{% url 'adminpanel:worker_review' worker.pk %}">
+            {% csrf_token %}
+            {% include "adminpanel/form_fields.html" %}
+            <button class="btn btn-primary" type="submit">Save decision</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
