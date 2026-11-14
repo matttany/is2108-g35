@@ -1,5 +1,7 @@
 from django.db import models
 
+BLOCK_CHOICES = [(block, f"Block {block}") for block in "ABCDEF"]
+
 # Create your models here.
 class Residence(models.Model):
   id = models.AutoField(primary_key=True)
@@ -23,14 +25,7 @@ class Residence(models.Model):
 class LaundryRoom(models.Model):
   id = models.AutoField(primary_key=True)
   residence = models.ForeignKey(Residence, on_delete=models.PROTECT)
-  block = models.CharField(max_length=120, choices=[
-    ('A', 'Block A'),
-    ('B', 'Block B'),
-    ('C', 'Block C'),
-    ('D', 'Block D'),
-    ('E', 'Block E'),
-    ('F', 'Block F'),
-  ])
+  block = models.CharField(max_length=120, choices=BLOCK_CHOICES)
   is_active = models.BooleanField(default=True) # just for admin control
 
   def __str__(self):

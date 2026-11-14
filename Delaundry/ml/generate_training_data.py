@@ -20,11 +20,15 @@ def generate_data():
         pickup = datetime.combine(service_date, time(hour), tzinfo=ZoneInfo("Asia/Singapore"))
         lead_hours = round(float(rng.uniform(0.25, 168)), 2)
         forecast_at = pickup - timedelta(hours=lead_hours)
-        machines = int(rng.integers(2, 121))
-        recent = int(rng.integers(0, 151))
+        # Sample one block for each hall/window; demand and machines belong to that block.
+        block_index = int(rng.integers(0, 6))
+        block = "ABCDEF"[block_index]
+        machines = int(rng.integers(2, 21))
+        recent = int(rng.integers(0, 41))
         known = int(rng.integers(0, machines // 2 + 1))
         features = {
           "residence": hall,
+          "block": block,
           "weekday": service_date.weekday(),
           "pickup_hour": hour,
           **calendar,
@@ -35,10 +39,10 @@ def generate_data():
         }
         # These are assumed demand patterns, not measurements of NUS residents.
         daily_demand = (
-          2 + hall_index * 0.4 + 3 * calendar["is_term_time"]
-          + 2 * (service_date.weekday() >= 5) + 3 * (hour >= 18)
-          + calendar["is_public_holiday"] + 0.10 * recent
-          + 0.08 * known + 0.02 * machines
+          0.5 + hall_index * 0.08 + block_index * 0.04 + 0.5 * calendar["is_term_time"]
+          + 0.4 * (service_date.weekday() >= 5) + 0.6 * (hour >= 18)
+          + 0.2 * calendar["is_public_holiday"] + 0.04 * recent
+          + 0.06 * known + 0.02 * machines
         )
         # Target: NEW requests after forecast_at and before pickup, excluding known bookings.
         expected_new = daily_demand * lead_hours / 24

@@ -21,20 +21,24 @@ def get_live_features(residence, window, now):
   pickup = timezone.localtime(window["service_start"])
   return {
     "residence": residence.name,
+    "block": window["block"],
     "weekday": pickup.weekday(),
     "pickup_hour": pickup.hour,
     "lead_hours": round((pickup - now).total_seconds() / 3600, 4),
     # Count submissions, including later cancellations; browsing quotes is not demand.
     "recent_requests": LaundryOrder.objects.filter(
-      quote__residence=residence, created_at__gte=now - timedelta(hours=24), created_at__lte=now,
+      quote__residence=residence, quote__block=window["block"],
+      created_at__gte=now - timedelta(hours=24), created_at__lte=now,
     ).count(),
     # Count washers only so a washer/dryer reservation pair represents one booking.
     "known_bookings": MachineReservation.objects.filter(
       machine__laundry_room__residence=residence, machine__machine_type="washer",
+      machine__laundry_room__block=window["block"],
       service_date=pickup.date(), window_start=pickup.time(), status="reserved",
     ).count(),
     "operational_machines": Machine.objects.filter(
       laundry_room__residence=residence, laundry_room__is_active=True,
+      laundry_room__block=window["block"],
       laundry_room__residence__is_active=True, status="ACTIVE",
     ).count(),
   }
@@ -55,6 +59,8 @@ def predict_demand(features):
   model = load_model(str(MODEL_PATH), MODEL_PATH.stat().st_mtime_ns)
   if "residence=" + features["residence"] not in model.named_steps["features"].vocabulary_:
     raise ValueError("This residence was not included in model training.")
+  if "block=" + features["block"] not in model.named_steps["features"].vocabulary_:
+    raise ValueError("This block was not included in model training.")
   prediction = float(model.predict([features])[0])
   if not math.isfinite(prediction) or prediction < 0:
     raise ValueError("Demand prediction must be finite and non-negative.")
@@ -105,10 +111,12 @@ def price_window(residence, window, now=None):
 
 def save_quote(profile, window, price):
   now = timezone.now()
+  if not profile.block or window["block"] != profile.block:
+    raise ValueError("The quote must use the customer's saved block.")
   if window["service_start"] <= now:
     raise ValueError("This pickup window has already started.")
   return PriceQuote.objects.create(
-    customer=profile.user, residence=profile.residence, unit_number=profile.unitNum,
+    customer=profile.user, residence=profile.residence, block=profile.block, unit_number=profile.unitNum,
     service_date=timezone.localtime(window["service_start"]).date(),
     window_start=window["window_start"], created_at=now,
     expires_at=min(now + timedelta(minutes=QUOTE_MINUTES), window["service_start"]),

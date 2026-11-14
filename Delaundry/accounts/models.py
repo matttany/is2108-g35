@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from facilities.models import BLOCK_CHOICES
 
 class User(AbstractUser):
   id = models.AutoField(primary_key=True)
@@ -21,10 +22,20 @@ class User(AbstractUser):
 class CustomerProfile(models.Model):
   user = models.OneToOneField(User, on_delete=models.CASCADE)
   residence = models.ForeignKey('facilities.Residence', on_delete=models.PROTECT)
+  # Existing customers must choose their block before making a new booking.
+  block = models.CharField(max_length=1, choices=BLOCK_CHOICES, blank=True, default="")
   
   id = models.AutoField(primary_key=True)
   unitNum = models.CharField(max_length=8)
   # pickup note?
+
+  class Meta:
+    constraints = [
+      models.CheckConstraint(
+        condition=models.Q(block__in=["", *"ABCDEF"]),
+        name="customer_valid_block",
+      ),
+    ]
 
 class WorkerProfile(models.Model):
   user = models.OneToOneField(User, on_delete=models.CASCADE)

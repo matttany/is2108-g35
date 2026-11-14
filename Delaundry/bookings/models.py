@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.functions import Round
 from django.utils import timezone
+from facilities.models import BLOCK_CHOICES
 
 
 SERVICE_START_TIMES = [time(hour) for hour in range(8, 21, 2)]
@@ -13,6 +14,8 @@ class PriceQuote(models.Model):
   id = models.AutoField(primary_key=True)
   customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
   residence = models.ForeignKey("facilities.Residence", on_delete=models.PROTECT)
+  # Blank is retained only for historical quotes made before block-based booking.
+  block = models.CharField(max_length=1, choices=BLOCK_CHOICES, blank=True, default="")
   unit_number = models.CharField(max_length=8)
   service_date = models.DateField()
   window_start = models.TimeField(choices=[(start, start.strftime("%H:%M")) for start in SERVICE_START_TIMES])
@@ -49,6 +52,7 @@ class PriceQuote(models.Model):
 
   class Meta:
     constraints = [
+      models.CheckConstraint(condition=models.Q(block__in=["", *"ABCDEF"]), name="quote_valid_block"),
       models.CheckConstraint(condition=models.Q(window_start__in=SERVICE_START_TIMES), name="quote_valid_window"),
       models.CheckConstraint(condition=models.Q(reference_capacity__gte=1), name="quote_positive_capacity"),
       models.CheckConstraint(condition=models.Q(expires_at__gt=models.F("created_at")), name="quote_valid_expiry"),

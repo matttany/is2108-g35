@@ -30,7 +30,7 @@ def train_model():
   evaluation_features = [read_feature_row(row) for row in evaluation]
   evaluation_targets = [int(row["new_requests"]) for row in evaluation]
   model = Pipeline([
-    # DictVectorizer one-hot encodes hall names and passes through numeric features.
+    # DictVectorizer one-hot encodes hall/block and passes through numeric features.
     ("features", DictVectorizer(sparse=False)),
     ("regressor", RandomForestRegressor(
       n_estimators=100, max_depth=12, min_samples_leaf=4, random_state=42, n_jobs=1,
@@ -39,16 +39,16 @@ def train_model():
   model.fit(train_features, train_targets)
   predictions = model.predict(evaluation_features)
 
-  # Historical-average baseline uses training targets only, grouped by hall and pickup hour.
+  # Historical-average baseline uses training targets only, grouped by hall/block/hour.
   groups = {}
   for row in train:
-    groups.setdefault((row["residence"], row["pickup_hour"]), []).append(int(row["new_requests"]))
+    groups.setdefault((row["residence"], row["block"], row["pickup_hour"]), []).append(int(row["new_requests"]))
   means = {key: mean(values) for key, values in groups.items()}
   overall_mean = mean(train_targets)
-  baseline = [means.get((row["residence"], row["pickup_hour"]), overall_mean) for row in evaluation]
+  baseline = [means.get((row["residence"], row["block"], row["pickup_hour"]), overall_mean) for row in evaluation]
   metrics = {
     "data_source": "Synthetic demonstration data; not validated on real demand.",
-    "target": "New requests arriving between forecast_at and pickup_at for this hall/window",
+    "target": "New requests arriving between forecast_at and pickup_at for this hall/block/window",
     "cutoff": cutoff.isoformat(),
     "training_rows": len(train), "evaluation_rows": len(evaluation),
     "excluded_boundary_rows": len(data) - len(train) - len(evaluation),

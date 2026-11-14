@@ -6,14 +6,14 @@ from pathlib import Path
 
 ML_DIR = Path(__file__).resolve().parent
 FEATURE_COLUMNS = [
-  "residence", "weekday", "pickup_hour", "is_term_time", "is_public_holiday",
+  "residence", "block", "weekday", "pickup_hour", "is_term_time", "is_public_holiday",
   "lead_hours", "recent_requests", "known_bookings", "operational_machines",
 ]
 
 
 def read_feature_row(row):
   # CSV values are strings; use the same numeric types as live feature queries.
-  return {name: row[name] if name == "residence" else float(row[name]) for name in FEATURE_COLUMNS}
+  return {name: row[name] if name in ["residence", "block"] else float(row[name]) for name in FEATURE_COLUMNS}
 
 
 @lru_cache(maxsize=1)
