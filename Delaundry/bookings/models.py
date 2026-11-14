@@ -89,6 +89,23 @@ class LaundryOrder(models.Model):
       ),
     ]
 
+class JobAssignment(models.Model):
+  order = models.OneToOneField(LaundryOrder, on_delete=models.PROTECT, related_name="assignment")
+  worker = models.ForeignKey("accounts.WorkerProfile", on_delete=models.PROTECT, related_name="assignments")
+  agreed_payout = models.DecimalField(
+    max_digits=5,
+    decimal_places=2,
+  )
+  accepted_at = models.DateTimeField(default=timezone.now)
+
+  class Meta:
+    constraints = [
+      models.CheckConstraint(
+        condition=models.Q(agreed_payout__gte=0),
+        name="assignment_nonnegative_payout",
+      ),
+    ]
+
 
 class MachineReservation(models.Model):
   id = models.AutoField(primary_key=True)

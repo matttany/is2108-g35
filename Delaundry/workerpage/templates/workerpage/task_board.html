@@ -1,0 +1,50 @@
+{% extends "accounts/worker_base.html" %}
+
+{% block title %}Open tasks | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1 class="h3">Open laundry tasks</h1>
+  <p class="text-secondary">{{ profile.residence }}</p>
+
+  {% for order in orders %}
+  <article class="border rounded p-3 mb-3">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+      <h2 class="h5">Order #{{ order.pk }}</h2>
+      <span class="fw-bold">
+        Quoted payout: S${{ order.quote.worker_fee|floatformat:2 }}
+      </span>
+    </div>
+  
+    <dl class="row mb-0">
+      <dt class="col-sm-4">Requester</dt>
+      <dd class="col-sm-8">{{ order.quote.customer.name }}</dd>
+  
+      <dt class="col-sm-4">Collection address</dt>
+      <dd class="col-sm-8">
+        {{ order.quote.residence }},
+        Block {{ order.quote.block }},
+        Unit {{ order.quote.unit_number }}
+      </dd>
+  
+      <dt class="col-sm-4">Collection window</dt>
+      <dd class="col-sm-8">
+        {{ order.quote.service_start|date:"d M Y, H:i" }}
+        – {{ order.quote.pickup_end|date:"H:i" }}
+      </dd>
+  
+      <dt class="col-sm-4">Return by</dt>
+      <dd class="col-sm-8">
+        {{ order.quote.delivery_by|date:"d M Y, H:i" }}
+      </dd>
+    </dl>
+  </article>
+  {% empty %}
+  <div class="alert alert-info">
+    No open laundry tasks are available in your hall.
+  </div>
+  {% endfor %}
+
+  <a class="btn btn-outline-secondary" href="{% url 'accounts:worker_home' %}">
+    Back to my account
+  </a>
+{% endblock %}
