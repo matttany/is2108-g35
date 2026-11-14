@@ -9,7 +9,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 from accounts.models import CustomerProfile
 from bookings.availability import get_available_windows
-from bookings.models import LaundryOrder, PriceQuote
+from bookings.models import LaundryOrder, MachineReservation, PriceQuote
 from bookings.pricing import price_window, save_quote
 from .forms import AvailabilityForm
 
@@ -111,20 +111,30 @@ def submit_request(request, quote_id):
       if quote.is_expired:
         raise ValidationError("This quote has expired. Please choose a pickup time and get a new quote.")
 
-      windows = get_available_windows(profile.residence, quote.service_date, profile.block)
-      if not any(window["window_start"] == quote.window_start for window in windows):
+      windows = get_available_windows(quote.residence, quote.service_date, quote.block)
+      selected_window = next((window for window in windows if window["window_start"] == quote.window_start), None)
+      if selected_window is None:
         raise ValidationError("This pickup window is no longer available. Please choose another time.")
       if quote.is_expired:
         raise ValidationError("This quote expired while availability was being checked. Please get a new quote.")
 
       # Reuse the stored quote and its total; submission never recalculates prices.
-      LaundryOrder.objects.create(quote=quote, status="requested")
+      order = LaundryOrder.objects.create(quote=quote, status="requested")
+      room = selected_window["rooms"][0]
+      # Reserve a same-room pair for the entire two-hour window, before worker acceptance.
+      for machine_id in [room["washer_ids"][0], room["dryer_ids"][0]]:
+        MachineReservation.objects.create(
+          order=order, machine_id=machine_id,
+          service_date=quote.service_date, window_start=quote.window_start,
+          status="reserved",
+        )
   except ValidationError as error:
     messages.error(request, " ".join(error.messages))
   except IntegrityError:
-    # The OneToOne constraint protects against concurrent submissions of the same quote.
+    # Atomic rollback removes the order and first reservation if the pair cannot be saved.
+    # A competing submission of this same quote may already have completed successfully.
     if not LaundryOrder.objects.filter(quote_id=quote_id, quote__customer=request.user).exists():
-      raise
+      messages.error(request, "The machines could not be reserved. Please check availability and try again.")
   except OperationalError as error:
     # SQLite cannot lock individual rows; a competing write may need a retry.
     if connection.vendor != "sqlite" or "locked" not in str(error).lower():
