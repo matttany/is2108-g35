@@ -12,6 +12,7 @@
       <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Customer navigation">
         <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% url 'accounts:customer_home' %}">DeLaundry</a>
         <a href="{% url 'accounts:customer_home' %}">My account</a>
+        <a href="{% url 'customerstorefront:order_list' %}">My orders</a>
         <a href="{% url 'customerstorefront:availability' %}">Pickup times</a>
         <form method="post" action="{% url 'accounts:logout' %}">
           {% csrf_token %}

@@ -11,6 +11,7 @@
     <div class="alert alert-info">
       Order #{{ order.pk }} &middot; Status: <strong>{{ order.get_status_display }}</strong>.
       The prices below were saved when your request was submitted.
+      <a class="d-block mt-2" href="{% url 'customerstorefront:order_detail' order.pk %}">View order details and progress</a>
       {% if order.status == "requested" %}
         <p class="mb-0 mt-2">Your request is waiting for an eligible worker to accept it. It is not confirmed yet.</p>
       {% endif %}
