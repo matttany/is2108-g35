@@ -120,7 +120,7 @@ It expires after 15 minutes or at pickup start, whichever comes first. Opening i
 Once a quote has been submitted as an order, its page shows that order's status and saved prices instead of an expiry warning.
 Expiry still prevents submitting an unused quote; it does not cancel an existing order.
 The availability table explicitly shows estimates: the final review price may differ if demand/capacity changes before selection.
-Availability remains provisional because only worker acceptance will reserve machines.
+Availability remains provisional until submission successfully reserves a washer and dryer. Worker acceptance subsequently confirms the request.
 
 ## C04: review and submit a request
 
@@ -129,19 +129,28 @@ through `order.quote`; the same quote cannot create two orders. `created_at` mea
 The review page shows the saved residence, block, unit, pickup window, delivery deadline and final price.
 Its CSRF-protected form posts to `/storefront/quotes/<id>/submit/`. Only an active customer who owns the quote may submit it.
 Submission checks the quote is unexpired, has a block and matches the customer's current saved address.
-It rechecks C02 availability in that same block, then checks expiry again before creating the order in a transaction.
+It rechecks C02 availability using the quote's saved hall, block, date and window, then checks expiry again.
+In one transaction it creates the requested order and two reserved MachineReservation rows, one available washer and one dryer in the same room.
+Each reservation uses `order=order` and the quote's date/window start, holding the machine for the full two-hour window.
+No assignment is supplied. If either reservation fails, the transaction rolls back the order and both reservation writes, and the customer receives an availability/retry message.
 The order references the existing quote; its price is not recalculated from the model or accepted from browser form values.
-No machine reservations, payments or worker assignments are created during submission.
+No payments or worker assignments are created during submission.
 
 Repeated submission of the same quote returns its existing order, even if the quote later expired or the order was cancelled.
-The database OneToOne constraint prevents duplicate orders. Row locks are used on databases that support them;
+Repeated submissions do not create additional reservations. The database OneToOne constraint prevents duplicate orders,
+and the unique reserved-machine/date/window constraint prevents double reservation. Row locks are used on databases that support them;
 SQLite lock contention produces a retry message. An unused expired/invalid quote cannot create an order.
 The saved quote page displays the order's status after submission and explains that `requested` is not yet `confirmed`.
 
 Call `get_available_windows(profile.residence, service_date, profile.block)`; the block argument is required.
-P03 still needs eligible worker acceptance, atomic machine reservations and a link from reservations to the accepted order;
-only that successful acceptance flow should change an order to `confirmed`.
-Coordinate these shared models before extending the later order statuses and worker assignment.
+P03 must reuse the order's existing reservations rather than allocate a second pair; only successful eligible worker acceptance should change the order to `confirmed`.
+C02 counts all reserved rows, regardless of order status. C03 likewise counts reserved washers, so requested orders already reduce availability and contribute to known bookings.
+C07 must release an order's reserved rows when cancelling, including cancellation before worker acceptance, in the same transaction as the status change.
+There is no separate capacity-slot model.
+
+Integration prerequisite: the teammate owns `MachineReservation.order` (nullable FK to LaundryOrder, PROTECT, related_name="reservations") and its migration.
+The submission code uses that contract; it cannot run successfully until the shared field is merged and its migration applied.
+No separate field/migration was created here. Verify the real integrated schema after merging it.
 
 ## Three demo orders for collaboration
 
@@ -161,6 +170,8 @@ This adds the following customers and requested orders to your own database, usi
 | demo_block_3 | Temasek | B | #01-03 |
 
 Each customer has one saved price quote and one `requested` order. No machine reservations are created.
+These older demo records bypass the submission flow and are not reservation-complete examples for P03.
+Use a freshly submitted customer request to exercise the new reservation contract; existing demo orders are not automatically backfilled.
 Re-running the command keeps those orders, statuses and original dates; it does not duplicate or refresh them.
 If a required block has no availability or a demo identity conflicts with another account, all inserts are rolled back.
 To use a different hall on the first run, supply its code, e.g. `python manage.py seed_demo_orders --residence eusoff`.
