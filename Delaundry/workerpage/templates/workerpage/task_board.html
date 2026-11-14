@@ -1,0 +1,16 @@
+{% extends "accounts/worker_base.html" %}
+
+{% block title %}Open tasks | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1 class="h3">Open laundry tasks</h1>
+  <p class="text-secondary">{{ profile.residence }}</p>
+
+  <div class="alert alert-info">
+    No Task listings available yet.
+  </div>
+
+  <a class="btn btn-outline-secondary" href="{% url 'accounts:worker_home' %}">
+    Back to my account
+  </a>
+{% endblock %}
