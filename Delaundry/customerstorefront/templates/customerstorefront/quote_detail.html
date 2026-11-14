@@ -2,9 +2,20 @@
 {% block title %}Your price quote | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Your laundry price quote</h1>
+  {% for message in messages %}
+    <div class="alert alert-danger" role="alert">{{ message }}</div>
+  {% endfor %}
   <p>Hall: <strong>{{ quote.residence }}</strong>{% if quote.block %} &middot; {{ quote.get_block_display }}{% endif %} &middot; Unit: {{ quote.unit_number }}</p>
   <p>{{ quote.service_date|date:"d M Y" }}: pickup {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}, delivery by {{ quote.delivery_by|time:"H:i" }} (Singapore time).</p>
-  {% if not quote.block %}
+  {% if order %}
+    <div class="alert alert-info">
+      Order #{{ order.pk }} &middot; Status: <strong>{{ order.get_status_display }}</strong>.
+      The prices below were saved when your request was submitted.
+      {% if order.status == "requested" %}
+        <p class="mb-0 mt-2">Your request is waiting for an eligible worker to accept it and reserve machines. It is not confirmed yet.</p>
+      {% endif %}
+    </div>
+  {% elif not quote.block %}
     <div class="alert alert-warning">This older quote has no residential block. Please choose a pickup time again to get a new quote for your saved block.</div>
   {% elif quote.is_expired %}
     <div class="alert alert-warning">This quote has expired. Please choose a pickup time again to get a current quote.</div>
@@ -27,6 +38,14 @@
   {% else %}
     <p class="text-secondary">Worker and platform fees reflect expected demand relative to available laundry spaces. Washing and drying remain $2.00.</p>
   {% endif %}
-  <p>This quote has not placed an order, reserved machines or charged you. Availability must be checked again when you submit a request.</p>
+  {% if not order %}
+    <p>This quote has not placed an order, reserved machines or charged you. Availability must be checked again when you submit a request.</p>
+    {% if quote.block and not quote.is_expired %}
+      <form method="post" action="{% url 'customerstorefront:submit_request' quote.pk %}" class="mb-3">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Submit request for ${{ quote.total|floatformat:2 }}</button>
+      </form>
+    {% endif %}
+  {% endif %}
   <a class="btn btn-outline-primary" href="{% url 'customerstorefront:availability' %}?date={{ quote.service_date|date:'Y-m-d' }}">Back to pickup times</a>
 {% endblock %}

@@ -18,7 +18,8 @@ Only machines in the customer's saved block are considered; URL/form parameters 
 The table shows estimates; **Review price quote** recalculates the final price on the server and saves it.
 The resulting `/storefront/quotes/<id>/` page shows the saved amount and expiry.
 Only the customer who created the quote can view it.
-This does not submit an order, charge money or reserve machines.
+Creating a quote does not submit an order, charge money or reserve machines.
+On a valid quote, **Submit request** creates an order at the saved price. The page then displays its order number and `Requested` status.
 
 The committed model can be used immediately. To reproduce the synthetic CSV and model, run from `Delaundry`:
 
@@ -116,18 +117,30 @@ the customer sees a standard-price explanation. Database failures are not disgui
 The selected quote stores the hall, block, unit, price breakdown, prediction, capacity and feature snapshot.
 Changing a customer's block later does not rewrite old quotes. Historical quotes without a block are labelled as needing replacement.
 It expires after 15 minutes or at pickup start, whichever comes first. Opening it again does not recalculate the price.
+Once a quote has been submitted as an order, its page shows that order's status and saved prices instead of an expiry warning.
+Expiry still prevents submitting an unused quote; it does not cancel an existing order.
 The availability table explicitly shows estimates: the final review price may differ if demand/capacity changes before selection.
 Availability remains provisional because only worker acceptance will reserve machines.
 
-## Shared order foundation for C04
+## C04: review and submit a request
 
 `LaundryOrder.quote` is a required OneToOneField. Customer, hall, block, unit, pickup window and fixed prices are obtained
 through `order.quote`; the same quote cannot create two orders. `created_at` measures submission time; status initially is `requested`.
-Only the small ledger is implemented here. C04 still needs its submission form and transaction, ownership/expiry/address checks,
-and another C02 availability check. It must use the stored prices and must not create an order from an expired quote,
-a quote without a block, or a quote whose address no longer matches the customer's saved address.
+The review page shows the saved residence, block, unit, pickup window, delivery deadline and final price.
+Its CSRF-protected form posts to `/storefront/quotes/<id>/submit/`. Only an active customer who owns the quote may submit it.
+Submission checks the quote is unexpired, has a block and matches the customer's current saved address.
+It rechecks C02 availability in that same block, then checks expiry again before creating the order in a transaction.
+The order references the existing quote; its price is not recalculated from the model or accepted from browser form values.
+No machine reservations, payments or worker assignments are created during submission.
+
+Repeated submission of the same quote returns its existing order, even if the quote later expired or the order was cancelled.
+The database OneToOne constraint prevents duplicate orders. Row locks are used on databases that support them;
+SQLite lock contention produces a retry message. An unused expired/invalid quote cannot create an order.
+The saved quote page displays the order's status after submission and explains that `requested` is not yet `confirmed`.
+
 Call `get_available_windows(profile.residence, service_date, profile.block)`; the block argument is required.
-P03 still needs atomic machine reservations and a link from reservations to the accepted order.
+P03 still needs eligible worker acceptance, atomic machine reservations and a link from reservations to the accepted order;
+only that successful acceptance flow should change an order to `confirmed`.
 Coordinate these shared models before extending the later order statuses and worker assignment.
 
 ## Three demo orders for collaboration

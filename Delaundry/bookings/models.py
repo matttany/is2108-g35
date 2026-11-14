@@ -72,7 +72,7 @@ class PriceQuote(models.Model):
 
 class LaundryOrder(models.Model):
   id = models.AutoField(primary_key=True)
-  # C04 will create an order from a valid quote; one quote cannot be submitted twice.
+  # Each submitted request uses one saved quote; the same quote cannot create two orders.
   quote = models.OneToOneField(PriceQuote, on_delete=models.PROTECT)
   created_at = models.DateTimeField(default=timezone.now, db_index=True)
   status = models.CharField(
