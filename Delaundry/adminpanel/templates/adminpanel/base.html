@@ -10,8 +10,9 @@
   <body class="bg-light">
     <header class="bg-white border-bottom">
       <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Staff navigation">
-        <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% url 'adminpanel:worker_list' %}">DeLaundry staff</a>
+        <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% url 'adminpanel:dashboard' %}">DeLaundry staff</a>
         {% if user.is_authenticated and user.is_staff and user.is_active %}
+          <a href="{% url 'adminpanel:dashboard' %}">Dashboard</a>
           <a href="{% url 'adminpanel:worker_list' %}">Worker applications</a>
           <a href="{% url 'facilities:list' %}">Facilities</a>
           <span class="text-secondary">{{ user.username }}</span>

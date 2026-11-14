@@ -4,10 +4,23 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import WorkerProfile
-from .forms import StaffLoginForm, WorkerApprovalForm, WorkerFilterForm
+from .forms import DashboardFilterForm, StaffLoginForm, WorkerApprovalForm, WorkerFilterForm
+from .dashboard import dashboard_data
+
+
+@login_required(login_url="adminpanel:login")
+@require_GET
+def dashboard(request):
+  if not request.user.is_active or not request.user.is_staff:
+    return HttpResponseForbidden("This page is for active staff accounts only.")
+  form = DashboardFilterForm(request.GET)
+  context = {"form": form, "stats": None}
+  if form.is_valid():
+    context["stats"] = dashboard_data(form.cleaned_data)
+  return render(request, "adminpanel/dashboard.html", context)
 
 
 def staff_login(request):
