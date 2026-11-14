@@ -1,0 +1,12 @@
+{% extends "accounts/worker_base.html" %}
+{% block title %}Become a worker | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Become a laundry worker</h1>
+  <p class="text-secondary">Apply to help with laundry requests in your hall. Staff will review your application before you can take jobs.</p>
+  <form method="post" action="{% url 'accounts:worker_register' %}">
+    {% csrf_token %}
+    {% include "accounts/worker_form_fields.html" %}
+    <button type="submit" class="btn btn-primary">Submit application</button>
+  </form>
+  <p class="mt-3 mb-0">Already applied? <a href="{% url 'accounts:worker_login' %}">Log in to check your status</a>.</p>
+{% endblock %}

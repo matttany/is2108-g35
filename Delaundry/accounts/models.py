@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-# Create your models here.
 class User(AbstractUser):
   id = models.AutoField(primary_key=True)
   email = models.EmailField(unique=True)
@@ -44,4 +43,12 @@ class WorkerProfile(models.Model):
     ],
     default="pending",
   )
-  
+
+  def can_accept_jobs(self):
+    # P02/P03 must check this again when browsing or accepting a job.
+    return (
+      self.user.role == "worker"
+      and self.user.is_active
+      and self.approval_status == "approved"
+      and self.is_available
+    )
