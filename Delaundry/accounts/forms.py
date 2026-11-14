@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
+from django.contrib.auth.forms import AuthenticationForm
 
 from facilities.models import Residence
 from .models import User, CustomerProfile
@@ -77,3 +78,45 @@ class CustomerRegistrationForm(UserCreationForm):
       )
 
       return user
+
+
+class CustomerLoginForm(AuthenticationForm):
+    username = forms.EmailField(
+        label="NUS Email",
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={
+              "autocomplete": "username",
+              "placeholder": "Eg. e1234567@u.nus.edu",
+            },
+        )
+    )
+
+    password = forms.CharField(
+      label="Password",
+      strip=False,
+      widget=forms.PasswordInput(
+        attrs={"autocomplete": "current-password"},
+      ),
+      )
+
+    def clean_username(self):
+      email = self.cleaned_data["username"].strip().lower()
+      identifier, domain = email.split("@")
+
+      if domain != "u.nus.edu":
+        raise forms.ValidationError(
+          "Please enter a valid NUS email address."
+        )
+
+      return identifier
+
+    # separate login pages for customer and staff eventually
+    def confirm_login_allowed(self, user):
+      super().confirm_login_allowed(user) # is_active must be true
+
+      if user.role != "customer":
+        raise forms.ValidationError(
+          "Please use a customer account to log in.",
+          code="invalid_role",
+        )
