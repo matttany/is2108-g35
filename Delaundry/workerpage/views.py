@@ -41,6 +41,7 @@ def task_board(request):
     .filter(
       status="requested",
       quote__residence=profile.residence,
+      assignment__isnull=True,
     )
     .exclude(quote__block="")
     .filter(
