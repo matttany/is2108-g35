@@ -5,6 +5,11 @@
 {% block content %}
   <h1 class="h3">My ongoing tasks</h1>
   <p class="text-secondary">Your assigned laundry jobs. All times are Singapore time.</p>
+  <p class="small text-secondary">
+    Reminders checked at {{ checked_at|date:"d M Y, H:i:s" }}.
+    <a href="{% url 'workerpage:my_tasks' %}">Refresh reminders</a> to update the times.
+    Cycles and order statuses do not finish automatically.
+  </p>
 
   {% for assignment in assignments %}
     {% with order=assignment.order quote=assignment.order.quote %}
@@ -13,6 +18,11 @@
           <h2 class="h5 mb-0">Order #{{ order.pk }}</h2>
           <span class="badge text-bg-primary">{{ order.get_status_display }}</span>
         </div>
+        {% if assignment.return_reminder %}
+          <div class="alert alert-{{ assignment.return_reminder.style }}" role="status">
+            {{ assignment.return_reminder.message }}
+          </div>
+        {% endif %}
         <dl class="row mb-0">
           <dt class="col-sm-4">Requester</dt>
           <dd class="col-sm-8">{{ quote.customer.name }}</dd>
@@ -50,6 +60,9 @@
         {% for session in assignment.wash_sessions %}
           <p class="mt-3 mb-1">Washer {{ session.machine.code }} started: {{ session.started_at|date:"d M Y, H:i:s" }}</p>
           <p class="mb-1">Expected end: {{ session.expected_end|date:"d M Y, H:i:s" }}</p>
+          {% if session.reminder %}
+            <div class="alert alert-{{ session.reminder.style }}" role="status">{{ session.reminder.message }}</div>
+          {% endif %}
           {% if session.ended_at %}
             <p>Wash finished: {{ session.ended_at|date:"d M Y, H:i:s" }}.</p>
             {% if order.status == "washing" %}
@@ -68,6 +81,9 @@
         {% for session in assignment.dry_sessions %}
           <p class="mt-3 mb-1">Dryer {{ session.machine.code }} started: {{ session.started_at|date:"d M Y, H:i:s" }}</p>
           <p class="mb-1">Expected end: {{ session.expected_end|date:"d M Y, H:i:s" }}</p>
+          {% if session.reminder %}
+            <div class="alert alert-{{ session.reminder.style }}" role="status">{{ session.reminder.message }}</div>
+          {% endif %}
           {% if session.ended_at %}
             <p>Drying finished: {{ session.ended_at|date:"d M Y, H:i:s" }}.</p>
           {% else %}
