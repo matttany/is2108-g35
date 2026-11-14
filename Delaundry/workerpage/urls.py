@@ -5,6 +5,7 @@ from . import views
 app_name = "workerpage"
 
 urlpatterns = [
+  path("earnings/", views.earnings, name="earnings"),
   path("my-tasks/", views.my_tasks, name="my_tasks"),
   path("my-tasks/<int:assignment_id>/progress/", views.task_progress, name="task_progress"),
   path("my-tasks/<int:assignment_id>/delivery/", views.delivery_proof, name="delivery_proof"),
