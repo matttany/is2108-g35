@@ -4,7 +4,20 @@ from django import forms
 from django.utils import timezone
 
 from bookings.availability import BOOKING_DAYS_AHEAD
-from bookings.models import SERVICE_START_TIMES
+from bookings.models import SERVICE_START_TIMES, SupportRequest
+
+
+class SupportRequestForm(forms.ModelForm):
+  class Meta:
+    model = SupportRequest
+    # Order ownership and report status come from the server, not the browser.
+    fields = ["category", "description"]
+    labels = {"category": "Problem type", "description": "What happened?"}
+    widgets = {
+      "category": forms.Select(attrs={"class": "form-select"}),
+      "description": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
+    }
+    help_texts = {"description": "Describe the problem in up to 2,000 characters."}
 
 
 class AvailabilityForm(forms.Form):

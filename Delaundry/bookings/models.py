@@ -76,6 +76,8 @@ class LaundryOrder(models.Model):
   # Each submitted request uses one saved quote; the same quote cannot create two orders.
   quote = models.OneToOneField(PriceQuote, on_delete=models.PROTECT)
   created_at = models.DateTimeField(default=timezone.now, db_index=True)
+  # Historical cancelled orders may not have a recorded cancellation time.
+  cancelled_at = models.DateTimeField(null=True, blank=True)
   status = models.CharField(
     max_length=14,
     choices=[
@@ -100,7 +102,35 @@ class LaundryOrder(models.Model):
         ]),
         name="order_valid_status",
       ),
+      models.CheckConstraint(
+        condition=(models.Q(cancelled_at__isnull=True) | models.Q(
+          status="cancelled", cancelled_at__gte=models.F("created_at"),
+        )),
+        name="order_valid_cancellation_time",
+      ),
     ]
+
+
+class SupportRequest(models.Model):
+  order = models.ForeignKey(LaundryOrder, on_delete=models.PROTECT, related_name="support_requests")
+  category = models.CharField(max_length=10, choices=[
+    ("late", "Late laundry"), ("missing", "Missing laundry"),
+    ("damaged", "Damaged laundry"), ("other", "Other problem"),
+  ])
+  description = models.TextField(max_length=2000)
+  created_at = models.DateTimeField(default=timezone.now)
+  status = models.CharField(max_length=10, choices=[("open", "Open"), ("resolved", "Resolved")], default="open")
+
+  class Meta:
+    constraints = [
+      models.CheckConstraint(condition=models.Q(category__in=["late", "missing", "damaged", "other"]), name="support_valid_category"),
+      models.CheckConstraint(condition=models.Q(status__in=["open", "resolved"]), name="support_valid_status"),
+      models.CheckConstraint(condition=~models.Q(description=""), name="support_has_description"),
+    ]
+
+  def __str__(self):
+    return f"Report #{self.pk} for order #{self.order_id}"
+
 
 class JobAssignment(models.Model):
   order = models.OneToOneField(LaundryOrder, on_delete=models.PROTECT, related_name="assignment")
