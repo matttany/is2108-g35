@@ -1,0 +1,102 @@
+{% extends "accounts/worker_base.html" %}
+
+{% block title %}My tasks | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1 class="h3">My ongoing tasks</h1>
+  <p class="text-secondary">Your assigned laundry jobs. All times are Singapore time.</p>
+
+  {% for assignment in assignments %}
+    {% with order=assignment.order quote=assignment.order.quote %}
+      <article class="border rounded p-3 mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h2 class="h5 mb-0">Order #{{ order.pk }}</h2>
+          <span class="badge text-bg-primary">{{ order.get_status_display }}</span>
+        </div>
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Requester</dt>
+          <dd class="col-sm-8">{{ quote.customer.name }}</dd>
+
+          
+          <dt class="col-sm-4">Collection address</dt>
+          <dd class="col-sm-8">{{ quote.residence }}, Block {{ quote.block }}, Unit {{ quote.unit_number }}</dd>
+
+          <dt class="col-sm-4">Collection window</dt>
+          <dd class="col-sm-8">{{ quote.service_start|date:"d M Y, H:i" }} &ndash; {{ quote.pickup_end|date:"H:i" }}</dd>
+
+          <dt class="col-sm-4">Return by</dt>
+          <dd class="col-sm-8">{{ quote.delivery_by|date:"d M Y, H:i" }}</dd>
+
+          <dt class="col-sm-4">Reserved machines</dt>
+          <dd class="col-sm-8">
+            <ul class="list-unstyled mb-0">
+              {% for reservation in order.reserved_pair %}
+                <li>{{ reservation.machine.get_machine_type_display }} {{ reservation.machine.code }} &middot; Block {{ reservation.machine.laundry_room.block }}</li>
+              {% empty %}
+                <li class="text-secondary">No reserved machines recorded.</li>
+              {% endfor %}
+            </ul>
+          </dd>
+
+          <dt class="col-sm-4">Agreed payout</dt>
+          <dd class="col-sm-8">S${{ assignment.agreed_payout|floatformat:2 }}</dd>
+
+          <dt class="col-sm-4">Accepted</dt>
+          <dd class="col-sm-8">{{ assignment.accepted_at|date:"d M Y, H:i" }}</dd>
+        </dl>
+        {% if assignment.picked_up_at %}
+          <p>Collected: {{ assignment.picked_up_at|date:"d M Y, H:i:s" }}</p>
+        {% endif %}
+        {% for session in assignment.wash_sessions %}
+          <p class="mt-3 mb-1">Washer {{ session.machine.code }} started: {{ session.started_at|date:"d M Y, H:i:s" }}</p>
+          <p class="mb-1">Expected end: {{ session.expected_end|date:"d M Y, H:i:s" }}</p>
+          {% if session.ended_at %}
+            <p>Wash finished: {{ session.ended_at|date:"d M Y, H:i:s" }}.</p>
+            {% if order.status == "washing" %}
+              <form method="post" action="{% url 'workerpage:task_progress' assignment.pk %}" class="mt-3">
+                {% csrf_token %}
+                <button class="btn btn-primary" name="action" value="start_dry" type="submit">Start dry</button>
+              </form>
+            {% endif %}
+          {% else %}
+            <form method="post" action="{% url 'workerpage:task_progress' assignment.pk %}" class="mt-3">
+              {% csrf_token %}
+              <button class="btn btn-primary" name="action" value="finish_wash" type="submit">Finish wash</button>
+            </form>
+          {% endif %}
+        {% endfor %}
+        {% for session in assignment.dry_sessions %}
+          <p class="mt-3 mb-1">Dryer {{ session.machine.code }} started: {{ session.started_at|date:"d M Y, H:i:s" }}</p>
+          <p class="mb-1">Expected end: {{ session.expected_end|date:"d M Y, H:i:s" }}</p>
+          {% if session.ended_at %}
+            <p>Drying finished: {{ session.ended_at|date:"d M Y, H:i:s" }}.</p>
+          {% else %}
+            <form method="post" action="{% url 'workerpage:task_progress' assignment.pk %}" class="mt-3">
+              {% csrf_token %}
+              <button class="btn btn-primary" name="action" value="finish_dry" type="submit">Finish dry</button>
+            </form>
+          {% endif %}
+        {% endfor %}
+        {% if order.status == "out_for_return" %}
+          <div class="alert alert-info mt-3">Laundry is ready for return. Return by {{ quote.delivery_by|date:"d M Y, H:i" }}.</div>
+        {% endif %}
+        {% if order.status == "confirmed" %}
+          <p class="text-secondary mt-3">Record collection during the first 15 minutes of the service window.</p>
+          <form method="post" action="{% url 'workerpage:task_progress' assignment.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-primary" name="action" value="collect" type="submit">Record collection</button>
+          </form>
+        {% elif order.status == "picked_up" %}
+          <form method="post" action="{% url 'workerpage:task_progress' assignment.pk %}" class="mt-3">
+            {% csrf_token %}
+            <button class="btn btn-primary" name="action" value="start_wash" type="submit">Start wash</button>
+          </form>
+        {% endif %}
+      </article>
+    {% endwith %}
+  {% empty %}
+    <div class="alert alert-info">You have no ongoing tasks.</div>
+  {% endfor %}
+
+  <a class="btn btn-outline-secondary" href="{% url 'workerpage:task_board' %}">Browse open tasks</a>
+{% endblock %}

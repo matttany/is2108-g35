@@ -76,15 +76,26 @@ class LaundryOrder(models.Model):
   quote = models.OneToOneField(PriceQuote, on_delete=models.PROTECT)
   created_at = models.DateTimeField(default=timezone.now, db_index=True)
   status = models.CharField(
-    max_length=10,
-    choices=[("requested", "Requested"), ("confirmed", "Confirmed"), ("cancelled", "Cancelled")],
+    max_length=14,
+    choices=[
+      ("requested", "Requested"),
+      ("confirmed", "Confirmed"),
+      ("picked_up", "Picked up"),
+      ("washing", "Washing"),
+      ("drying", "Drying"),
+      ("out_for_return", "Out for return"),
+      ("cancelled", "Cancelled"),
+    ],
     default="requested",
   )
 
   class Meta:
     constraints = [
       models.CheckConstraint(
-        condition=models.Q(status__in=["requested", "confirmed", "cancelled"]),
+        condition=models.Q(status__in=[
+          "requested", "confirmed", "picked_up", "washing", "drying",
+          "out_for_return", "cancelled",
+        ]),
         name="order_valid_status",
       ),
     ]
@@ -97,6 +108,8 @@ class JobAssignment(models.Model):
     decimal_places=2,
   )
   accepted_at = models.DateTimeField(default=timezone.now)
+  picked_up_at = models.DateTimeField(null=True, blank=True)
+  out_for_return_at = models.DateTimeField(null=True, blank=True)
 
   class Meta:
     constraints = [
