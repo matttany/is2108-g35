@@ -1,0 +1,35 @@
+{% extends "customerstorefront/base.html" %}
+{% block title %}My orders | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">My orders</h1>
+  <p class="text-secondary">Your current and previous requests, newest submissions first. All times are Singapore time.</p>
+  {% if page.object_list %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <caption>Your laundry order history</caption>
+        <thead><tr><th scope="col">Order</th><th scope="col">Pickup</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Total (SGD)</th></tr></thead>
+        <tbody>
+          {% for order in page %}
+            <tr>
+              <th scope="row"><a href="{% url 'customerstorefront:order_detail' order.pk %}">Order #{{ order.pk }}</a></th>
+              <td>{{ order.quote.service_date|date:"d M Y" }}<br>{{ order.quote.service_start|time:"H:i" }}&ndash;{{ order.quote.pickup_end|time:"H:i" }}</td>
+              <td>{{ order.quote.residence }}{% if order.quote.block %}<br>{{ order.quote.get_block_display }}{% endif %}</td>
+              <td>{{ order.get_status_display }}</td>
+              <td>${{ order.quote.total|floatformat:2 }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.has_other_pages %}
+      <nav class="d-flex align-items-center gap-3" aria-label="Order history pages">
+        {% if page.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
+        <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="btn btn-outline-secondary" href="?page={{ page.next_page_number }}">Next</a>{% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="alert alert-info">You have no laundry orders yet. Choose a pickup time, review your quote and submit a request to get started.</div>
+  {% endif %}
+  <a class="btn btn-primary mt-3" href="{% url 'customerstorefront:availability' %}">New laundry request</a>
+{% endblock %}
