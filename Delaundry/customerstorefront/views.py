@@ -6,11 +6,12 @@ from django.db import IntegrityError, OperationalError, connection, transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from accounts.models import CustomerProfile
 from bookings.availability import get_available_windows
-from bookings.models import JobAssignment, LaundryOrder, MachineReservation, PriceQuote
+from bookings.models import DeliveryProof, JobAssignment, LaundryOrder, MachineReservation, PriceQuote
 from bookings.pricing import price_window, save_quote
 from .forms import AvailabilityForm
 from .tracking import get_order_timeline
@@ -30,6 +31,7 @@ def order_list(request):
 
 
 @login_required(login_url="accounts:login")
+@never_cache
 @require_GET
 def order_detail(request, order_id):
   if not request.user.is_active or request.user.role != "customer":
@@ -40,10 +42,14 @@ def order_detail(request, order_id):
   )
   assignment = JobAssignment.objects.select_related("worker__user").filter(order=order).first()
   sessions = []
+  proof = None
   if assignment is not None:
     sessions = list(assignment.sessions.select_related("machine__laundry_room").order_by("started_at", "pk"))
+    # Only load proof belonging to the customer's already-authorised order.
+    proof = DeliveryProof.objects.select_related("uploaded_by").filter(assignment=assignment).first()
   context = {
     "order": order, "quote": order.quote, "assignment": assignment, "sessions": sessions,
+    "proof": proof,
     "timeline": get_order_timeline(order, assignment, sessions),
   }
   return render(request, "customerstorefront/order_detail.html", context)

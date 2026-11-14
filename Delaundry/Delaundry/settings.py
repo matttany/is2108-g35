@@ -123,6 +123,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Do not expose this folder through a public media/static route.
+PRIVATE_PROOF_ROOT = BASE_DIR / 'private_uploads'
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

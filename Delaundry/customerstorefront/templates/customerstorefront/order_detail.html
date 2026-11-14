@@ -44,6 +44,31 @@
       </section>
     </div>
   </div>
+  <section class="card card-body mt-4" aria-labelledby="proof-heading">
+    <h2 class="h5" id="proof-heading">Delivery proof</h2>
+    {% if proof %}
+      <figure class="mb-3">
+        <a href="{% url 'bookings:delivery_photo' proof.pk %}">
+          <img class="img-fluid rounded border" loading="lazy" src="{% url 'bookings:delivery_photo' proof.pk %}" alt="Returned laundry for order {{ order.pk }}">
+        </a>
+        <figcaption class="text-secondary mt-2">Select the photo to view it at full size.</figcaption>
+      </figure>
+      <dl class="row mb-0">
+        <dt class="col-sm-3">Uploaded by</dt>
+        <dd class="col-sm-9">{{ proof.uploaded_by.name|default:proof.uploaded_by.username }}</dd>
+        <dt class="col-sm-3">Uploaded on</dt>
+        <dd class="col-sm-9">{{ proof.uploaded_at|date:"d M Y, H:i:s" }} (Singapore time)</dd>
+        {% if proof.note %}
+          <dt class="col-sm-3">Delivery note</dt>
+          <dd class="col-sm-9">{{ proof.note|linebreaksbr }}</dd>
+        {% endif %}
+      </dl>
+    {% elif order.status == "delivered" %}
+      <p class="mb-0 text-secondary">Delivery proof is not available for this order. Please contact staff if you need help.</p>
+    {% else %}
+      <p class="mb-0 text-secondary">No delivery proof has been uploaded yet.</p>
+    {% endif %}
+  </section>
   <section class="card card-body mt-4" aria-labelledby="progress-heading">
     <h2 class="h5" id="progress-heading">Order progress</h2>
     <p class="text-secondary">Recorded times show actual updates. Passing a scheduled time does not automatically change your order's status.</p>
