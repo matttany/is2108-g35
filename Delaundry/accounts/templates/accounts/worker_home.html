@@ -1,0 +1,20 @@
+{% extends "accounts/worker_base.html" %}
+{% block content %}
+  <h1 class="h3">Welcome, {{ user.name }}</h1>
+  <p class="text-secondary">Your laundry-worker account</p>
+  <dl class="row">
+    <dt class="col-sm-4">NUS email</dt><dd class="col-sm-8">{{ user.email }}</dd>
+    <dt class="col-sm-4">Hall</dt><dd class="col-sm-8">{{ profile.residence }}</dd>
+    <dt class="col-sm-4">Application status</dt><dd class="col-sm-8">{{ profile.get_approval_status_display }}</dd>
+    <dt class="col-sm-4">Availability</dt><dd class="col-sm-8">{{ profile.is_available|yesno:"Available,Unavailable" }}</dd>
+  </dl>
+  {% if profile.approval_status == 'pending' %}
+    <div class="alert alert-warning">Your application is awaiting staff approval. You cannot take jobs yet.</div>
+  {% elif profile.approval_status == 'suspended' %}
+    <div class="alert alert-danger">Your worker account is suspended. Please contact staff before taking new jobs.</div>
+  {% elif can_accept_jobs %}
+    <div class="alert alert-success">Your account is approved and available for new jobs.</div>
+  {% else %}
+    <div class="alert alert-warning">Your account is currently unavailable for new jobs.</div>
+  {% endif %}
+{% endblock %}

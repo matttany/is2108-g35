@@ -1,0 +1,8 @@
+{% extends "accounts/worker_base.html" %}
+{% block title %}Application submitted | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Application submitted</h1>
+  <div class="alert alert-success">Your worker account has been created.</div>
+  <p>Your application is <strong>Pending</strong> staff approval. You can log in to check your status, but cannot take jobs until approved.</p>
+  <a class="btn btn-primary" href="{% url 'accounts:worker_login' %}">Go to worker login</a>
+{% endblock %}
