@@ -15,7 +15,9 @@
       </span>
     </div>
   
+
     <dl class="row mb-0">
+      
       <dt class="col-sm-4">Requester</dt>
       <dd class="col-sm-8">{{ order.quote.customer.name }}</dd>
   
@@ -37,6 +39,12 @@
         {{ order.quote.delivery_by|date:"d M Y, H:i" }}
       </dd>
     </dl>
+    <form method="post" action="{% url 'workerpage:accept_task' order.pk %}" class="mt-3">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">
+        Accept task
+      </button>
+    </form>
   </article>
   {% empty %}
   <div class="alert alert-info">
