@@ -1,0 +1,66 @@
+{% extends "customerstorefront/base.html" %}
+{% block title %}Pickup availability | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Choose a laundry pickup time</h1>
+  <p>Hall: <strong>{{ profile.residence }}</strong> &middot; Unit: {{ profile.unitNum }}</p>
+  <p class="text-secondary">All times are Singapore time. Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
+  <div class="alert alert-info">
+    Availability is provisional. Selecting a window does not reserve machines or confirm a booking.
+    Confirmation requires an approved worker to accept your request and reserve a washer and dryer.
+  </div>
+
+  <form class="card card-body mb-4" method="get" action="{% url 'customerstorefront:availability' %}">
+    <div class="row align-items-end g-3">
+      <div class="col-12 col-md-5">
+        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+        {{ form.date }}
+        <div class="text-danger" id="{{ form.date.auto_id }}_error" role="alert">{{ form.date.errors }}</div>
+      </div>
+      <div class="col-auto"><button class="btn btn-primary" type="submit">Check availability</button></div>
+    </div>
+  </form>
+
+  {% if form.window_start.errors %}
+    <div class="alert alert-danger" role="alert">{{ form.window_start.errors }}</div>
+  {% endif %}
+  {% if not profile.residence.is_active %}
+    <div class="alert alert-warning">Your hall is currently unavailable for laundry bookings.</div>
+  {% elif windows %}
+    <form method="get" action="{% url 'customerstorefront:availability' %}">
+      <input type="hidden" name="date" value="{{ form.cleaned_data.date|date:'Y-m-d' }}">
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+          <caption>Available pickup windows for {{ form.cleaned_data.date|date:"d M Y" }}</caption>
+          <thead><tr><th scope="col">Select pickup</th><th scope="col">Deliver by</th><th scope="col">Available laundry spaces</th></tr></thead>
+          <tbody>
+            {% for window in windows %}
+              <tr>
+                <td>
+                  <input class="form-check-input me-2" type="radio" name="window_start" id="window-{{ forloop.counter }}"
+                         value="{{ window.window_start|time:'H:i' }}" required
+                         {% if selected_window and selected_window.window_start == window.window_start %}checked{% endif %}>
+                  <label for="window-{{ forloop.counter }}">{{ window.service_start|time:"H:i" }}&ndash;{{ window.pickup_end|time:"H:i" }}</label>
+                </td>
+                <td>{{ window.delivery_by|time:"H:i" }}</td>
+                <td>{{ window.available_pairs }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary" type="submit">Select window</button>
+    </form>
+  {% elif not form.errors %}
+    <div class="alert alert-warning">No pickup windows are available on this date. Please try another date.</div>
+  {% endif %}
+
+  {% if selected_window %}
+    <div class="card card-body mt-4" role="status">
+      <h2 class="h5">Selected pickup window</h2>
+      <p class="mb-1">{{ form.cleaned_data.date|date:"d M Y" }}:
+        {{ selected_window.service_start|time:"H:i" }}&ndash;{{ selected_window.pickup_end|time:"H:i" }},
+        delivery by {{ selected_window.delivery_by|time:"H:i" }}.</p>
+      <p class="mb-0">This selection is provisional. No booking or machine reservation has been created.</p>
+    </div>
+  {% endif %}
+{% endblock %}
