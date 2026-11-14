@@ -4,7 +4,7 @@ from django.db import transaction
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
-from facilities.models import Residence
+from facilities.models import BLOCK_CHOICES, LaundryRoom, Residence
 from .models import User, CustomerProfile, WorkerProfile
 
 from django.contrib.auth import password_validation
@@ -15,6 +15,10 @@ class CustomerRegistrationForm(UserCreationForm):
     residence = forms.ModelChoiceField(
         queryset=Residence.objects.filter(is_active=True), # dropdown for 6 halls
         empty_label="Select your residence",
+    )
+    block = forms.ChoiceField(
+        choices=[("", "Select your block"), *BLOCK_CHOICES],
+        help_text="Laundry bookings use machines in your residential block only.",
     )
     unit_number = forms.CharField(
       max_length=8,
@@ -49,6 +53,7 @@ class CustomerRegistrationForm(UserCreationForm):
         "name",
         "email",
         "residence",
+        "block",
         "unit_number",
         "password1",
         "password2",
@@ -64,6 +69,13 @@ class CustomerRegistrationForm(UserCreationForm):
         raise forms.ValidationError("This email address is already in use. Please use a different email address.")
 
       return email
+
+    def clean_block(self):
+      block = self.cleaned_data["block"]
+      residence = self.cleaned_data.get("residence")
+      if residence and not LaundryRoom.objects.filter(residence=residence, block=block, is_active=True).exists():
+        raise forms.ValidationError("This block is not available in your selected hall.")
+      return block
 
     def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
@@ -92,10 +104,29 @@ class CustomerRegistrationForm(UserCreationForm):
       CustomerProfile.objects.create(
           user=user,
           residence=self.cleaned_data["residence"],
+          block=self.cleaned_data["block"],
           unitNum=self.cleaned_data["unit_number"],
       )
 
       return user
+
+
+class CustomerBlockForm(forms.ModelForm):
+    block = forms.ChoiceField(widget=forms.Select(attrs={"class": "form-select"}))
+
+    class Meta:
+        model = CustomerProfile
+        fields = ["block"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Derive the hall from the saved profile, never from submitted form data.
+        rooms = LaundryRoom.objects.filter(
+            residence=self.instance.residence, residence__is_active=True, is_active=True,
+        ).order_by("block")
+        self.fields["block"].choices = [("", "Select your block")] + [
+            (room.block, room.get_block_display()) for room in rooms
+        ]
 
 
 class CustomerLoginForm(AuthenticationForm):

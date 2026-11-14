@@ -2,7 +2,8 @@
 {% block title %}Pickup availability | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Choose a laundry pickup time</h1>
-  <p>Hall: <strong>{{ profile.residence }}</strong> &middot; Unit: {{ profile.unitNum }}</p>
+  <p>Hall: <strong>{{ profile.residence }}</strong> &middot; {{ profile.get_block_display }} &middot; Unit: {{ profile.unitNum }}</p>
+  <p class="text-secondary">Availability and prices are for your saved block only. <a href="{% url 'accounts:customer_block' %}">Update my block</a></p>
   <p class="text-secondary">All times are Singapore time. Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
   <div class="alert alert-info">
     Availability is provisional. Selecting a window does not reserve machines or confirm a booking.
@@ -26,12 +27,14 @@
   {% if not profile.residence.is_active %}
     <div class="alert alert-warning">Your hall is currently unavailable for laundry bookings.</div>
   {% elif windows %}
-    <form method="get" action="{% url 'customerstorefront:availability' %}">
+    <p>Prices below are estimates in SGD. Select a time to review an itemised quote, valid for 15 minutes or until pickup starts, whichever comes first.</p>
+    <form method="post" action="{% url 'customerstorefront:availability' %}">
+      {% csrf_token %}
       <input type="hidden" name="date" value="{{ form.cleaned_data.date|date:'Y-m-d' }}">
       <div class="table-responsive">
         <table class="table table-bordered table-striped align-middle">
           <caption>Available pickup windows for {{ form.cleaned_data.date|date:"d M Y" }}</caption>
-          <thead><tr><th scope="col">Select pickup</th><th scope="col">Deliver by</th><th scope="col">Available laundry spaces</th></tr></thead>
+          <thead><tr><th scope="col">Select pickup</th><th scope="col">Deliver by</th><th scope="col">Available laundry spaces</th><th scope="col">Wash + dry</th><th scope="col">Worker</th><th scope="col">Platform</th><th scope="col">Total (SGD)</th></tr></thead>
           <tbody>
             {% for window in windows %}
               <tr>
@@ -43,24 +46,22 @@
                 </td>
                 <td>{{ window.delivery_by|time:"H:i" }}</td>
                 <td>{{ window.available_pairs }}</td>
+                <td>${{ window.price.machine_fee|floatformat:2 }}</td>
+                <td>${{ window.price.worker_fee|floatformat:2 }}</td>
+                <td>${{ window.price.platform_fee|floatformat:2 }}</td>
+                <td>
+                  <strong>${{ window.price.total|floatformat:2 }}</strong>
+                  {% if window.price.used_fallback %}<small class="d-block text-secondary">Standard price</small>{% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-      <button class="btn btn-primary" type="submit">Select window</button>
+      <button class="btn btn-primary" type="submit">Review price quote</button>
     </form>
   {% elif not form.errors %}
     <div class="alert alert-warning">No pickup windows are available on this date. Please try another date.</div>
   {% endif %}
 
-  {% if selected_window %}
-    <div class="card card-body mt-4" role="status">
-      <h2 class="h5">Selected pickup window</h2>
-      <p class="mb-1">{{ form.cleaned_data.date|date:"d M Y" }}:
-        {{ selected_window.service_start|time:"H:i" }}&ndash;{{ selected_window.pickup_end|time:"H:i" }},
-        delivery by {{ selected_window.delivery_by|time:"H:i" }}.</p>
-      <p class="mb-0">This selection is provisional. No booking or machine reservation has been created.</p>
-    </div>
-  {% endif %}
 {% endblock %}

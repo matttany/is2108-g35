@@ -1,0 +1,7 @@
+start_date,end_date,is_term_time,label,source
+2026-01-01,2026-01-11,0,Vacation,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2025-2026.pdf
+2026-01-12,2026-05-09,1,Semester 2 including recess and examinations,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2025-2026.pdf
+2026-05-10,2026-08-02,0,Vacation including special term,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2025-2026.pdf
+2026-08-03,2026-08-09,1,Orientation week,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2026-2027.pdf
+2026-08-10,2026-12-05,1,Semester 1 including recess and examinations,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2026-2027.pdf
+2026-12-06,2026-12-31,0,Vacation,https://www.nus.edu.sg/registrar/docs/default-source/calendar/ay2026-2027.pdf
