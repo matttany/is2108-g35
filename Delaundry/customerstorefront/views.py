@@ -20,6 +20,8 @@ def availability(request):
   profile = CustomerProfile.objects.select_related("residence").filter(user=request.user).first()
   if profile is None:
     return HttpResponseForbidden("Your customer profile is missing. Please contact staff.")
+  if not profile.block:
+    return redirect("accounts:customer_block")
 
   data = request.POST if request.method == "POST" else request.GET
   form = AvailabilityForm(data if data else {"date": timezone.localdate().isoformat()})
@@ -28,8 +30,8 @@ def availability(request):
   windows = []
   selected_window = None
   if form.is_valid():
-    # Use the customer's saved hall, not a hall supplied through the URL.
-    windows = get_available_windows(profile.residence, form.cleaned_data["date"])
+    # Both hall and block come from the customer's profile, not the browser.
+    windows = get_available_windows(profile.residence, form.cleaned_data["date"], profile.block)
     selected_start = form.cleaned_data["window_start"]
     if selected_start is not None:
       for window in windows:

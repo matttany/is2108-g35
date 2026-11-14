@@ -2,7 +2,8 @@
 {% block title %}Pickup availability | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Choose a laundry pickup time</h1>
-  <p>Hall: <strong>{{ profile.residence }}</strong> &middot; Unit: {{ profile.unitNum }}</p>
+  <p>Hall: <strong>{{ profile.residence }}</strong> &middot; {{ profile.get_block_display }} &middot; Unit: {{ profile.unitNum }}</p>
+  <p class="text-secondary">Availability and prices are for your saved block only. <a href="{% url 'accounts:customer_block' %}">Update my block</a></p>
   <p class="text-secondary">All times are Singapore time. Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
   <div class="alert alert-info">
     Availability is provisional. Selecting a window does not reserve machines or confirm a booking.

@@ -9,17 +9,18 @@ from .models import MachineReservation, SERVICE_START_TIMES
 BOOKING_DAYS_AHEAD = 7
 
 
-def get_available_windows(residence, service_date):
+def get_available_windows(residence, service_date, block):
   now = timezone.localtime()
-  if not residence.is_active:
+  if not residence.is_active or not block:
     return []
   if service_date < now.date() or service_date > now.date() + timedelta(days=BOOKING_DAYS_AHEAD):
     return []
 
-  rooms = list(LaundryRoom.objects.filter(residence=residence, is_active=True).order_by("block"))
+  rooms = list(LaundryRoom.objects.filter(residence=residence, block=block, is_active=True))
   machines = list(Machine.objects.filter(laundry_room__in=rooms, status="ACTIVE").order_by("code"))
   reservations = list(MachineReservation.objects.filter(
     machine__laundry_room__residence=residence,
+    machine__laundry_room__block=block,
     service_date=service_date,
     status="reserved",
   ).values_list("window_start", "machine_id"))
@@ -58,6 +59,7 @@ def get_available_windows(residence, service_date):
 
     if available_pairs > 0:
       windows.append({
+        "block": block,
         "window_start": start,
         "service_start": service_start,
         "pickup_end": service_start + timedelta(minutes=15),

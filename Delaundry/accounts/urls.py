@@ -14,5 +14,6 @@ urlpatterns = [
   path("register/success/", views.registration_success, name="registration_success"),
   path("login/", views.customer_login, name="login"),
   path("home/", views.customer_home, name="customer_home"),
+  path("block/", views.customer_block, name="customer_block"),
   path("logout/", views.customer_logout, name="logout"),
 ]

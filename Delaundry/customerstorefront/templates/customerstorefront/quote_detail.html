@@ -2,9 +2,11 @@
 {% block title %}Your price quote | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Your laundry price quote</h1>
-  <p>Hall: <strong>{{ quote.residence }}</strong> &middot; Unit: {{ quote.unit_number }}</p>
+  <p>Hall: <strong>{{ quote.residence }}</strong>{% if quote.block %} &middot; {{ quote.get_block_display }}{% endif %} &middot; Unit: {{ quote.unit_number }}</p>
   <p>{{ quote.service_date|date:"d M Y" }}: pickup {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}, delivery by {{ quote.delivery_by|time:"H:i" }} (Singapore time).</p>
-  {% if quote.is_expired %}
+  {% if not quote.block %}
+    <div class="alert alert-warning">This older quote has no residential block. Please choose a pickup time again to get a new quote for your saved block.</div>
+  {% elif quote.is_expired %}
     <div class="alert alert-warning">This quote has expired. Please choose a pickup time again to get a current quote.</div>
   {% else %}
     <div class="alert alert-success">This price is fixed until {{ quote.expires_at|date:"d M Y, H:i:s" }} (Singapore time).</div>
