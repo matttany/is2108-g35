@@ -20,6 +20,7 @@ from django.views.decorators.http import require_POST
 
 from bookings.acceptance import accept_order
 from bookings.progress import update_task
+from .reminders import cycle_reminder, return_reminder
 # Create your views here.
 
 @login_required(login_url="accounts:worker_login")
@@ -133,10 +134,17 @@ def my_tasks(request):
       to_attr="dry_sessions",
     ),
   )
+  checked_at = timezone.now()
+  for assignment in assignments:
+    assignment.return_reminder = return_reminder(
+      assignment.order.quote.delivery_by, checked_at,
+    )
+    for session in assignment.wash_sessions + assignment.dry_sessions:
+      session.reminder = cycle_reminder(session, checked_at)
   return render(
     request,
     "workerpage/my_tasks.html",
-    {"assignments": assignments},
+    {"assignments": assignments, "checked_at": checked_at},
   )
 
 
