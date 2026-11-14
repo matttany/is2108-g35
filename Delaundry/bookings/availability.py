@@ -17,7 +17,7 @@ def get_available_windows(residence, service_date):
     return []
 
   rooms = list(LaundryRoom.objects.filter(residence=residence, is_active=True).order_by("block"))
-  machines = list(Machine.objects.filter(laundry_room__in=rooms, is_active=True).order_by("code"))
+  machines = list(Machine.objects.filter(laundry_room__in=rooms, status="ACTIVE").order_by("code"))
   reservations = list(MachineReservation.objects.filter(
     machine__laundry_room__residence=residence,
     service_date=service_date,

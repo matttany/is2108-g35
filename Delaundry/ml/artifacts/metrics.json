@@ -1,0 +1,29 @@
+{
+  "data_source": "Synthetic demonstration data; not validated on real demand.",
+  "target": "New requests arriving between forecast_at and pickup_at for this hall/window",
+  "cutoff": "2026-09-01T00:00:00+08:00",
+  "training_rows": 10206,
+  "evaluation_rows": 2430,
+  "excluded_boundary_rows": 132,
+  "last_training_pickup": "2026-08-31T20:00:00+08:00",
+  "first_evaluation_forecast": "2026-09-01T00:28:48+08:00",
+  "random_forest_mae": 6.5809534812515995,
+  "historical_average_mae": 33.52543650188826,
+  "features": [
+    "residence",
+    "weekday",
+    "pickup_hour",
+    "is_term_time",
+    "is_public_holiday",
+    "lead_hours",
+    "recent_requests",
+    "known_bookings",
+    "operational_machines"
+  ],
+  "versions": {
+    "scikit-learn": "1.7.2",
+    "numpy": "2.5.4",
+    "joblib": "1.6.0"
+  },
+  "random_seed": 42
+}
