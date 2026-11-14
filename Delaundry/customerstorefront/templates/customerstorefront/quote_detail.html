@@ -1,0 +1,30 @@
+{% extends "customerstorefront/base.html" %}
+{% block title %}Your price quote | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Your laundry price quote</h1>
+  <p>Hall: <strong>{{ quote.residence }}</strong> &middot; Unit: {{ quote.unit_number }}</p>
+  <p>{{ quote.service_date|date:"d M Y" }}: pickup {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}, delivery by {{ quote.delivery_by|time:"H:i" }} (Singapore time).</p>
+  {% if quote.is_expired %}
+    <div class="alert alert-warning">This quote has expired. Please choose a pickup time again to get a current quote.</div>
+  {% else %}
+    <div class="alert alert-success">This price is fixed until {{ quote.expires_at|date:"d M Y, H:i:s" }} (Singapore time).</div>
+  {% endif %}
+  <div class="card card-body mb-3">
+    <h2 class="h5">Price breakdown (SGD)</h2>
+    <table class="table mb-0">
+      <tbody>
+        <tr><th scope="row">Washing and drying</th><td class="text-end">${{ quote.machine_fee|floatformat:2 }}</td></tr>
+        <tr><th scope="row">Worker fee</th><td class="text-end">${{ quote.worker_fee|floatformat:2 }}</td></tr>
+        <tr><th scope="row">Platform fee</th><td class="text-end">${{ quote.platform_fee|floatformat:2 }}</td></tr>
+        <tr class="table-light"><th scope="row">Total</th><td class="text-end fw-bold">${{ quote.total|floatformat:2 }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  {% if quote.used_fallback %}
+    <p class="text-secondary">Demand-based pricing is temporarily unavailable, so the standard price applies.</p>
+  {% else %}
+    <p class="text-secondary">Worker and platform fees reflect expected demand relative to available laundry spaces. Washing and drying remain $2.00.</p>
+  {% endif %}
+  <p>This quote has not placed an order, reserved machines or charged you. Availability must be checked again when you submit a request.</p>
+  <a class="btn btn-outline-primary" href="{% url 'customerstorefront:availability' %}?date={{ quote.service_date|date:'Y-m-d' }}">Back to pickup times</a>
+{% endblock %}
