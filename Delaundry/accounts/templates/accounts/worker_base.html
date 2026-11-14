@@ -30,6 +30,11 @@
         <div class="col-12 col-md-9 col-lg-7">
           <div class="card shadow-sm">
             <div class="card-body p-4">
+              {% for message in messages %}
+              <div role="alert" class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
+                {{ message }}
+              </div>
+              {% endfor %}
               {% block content %}{% endblock %}
             </div>
           </div>

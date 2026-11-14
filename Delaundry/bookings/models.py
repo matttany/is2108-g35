@@ -106,9 +106,72 @@ class JobAssignment(models.Model):
       ),
     ]
 
+class WindowAllocation(models.Model):
+  assignment = models.OneToOneField(JobAssignment, on_delete=models.PROTECT,related_name="allocation")
+  laundry_room = models.ForeignKey("facilities.LaundryRoom",on_delete=models.PROTECT,)
+  service_date = models.DateField()
+  window_start = models.TimeField(
+    choices=[
+      (start, start.strftime("%H:%M"))
+      for start in SERVICE_START_TIMES
+    ],
+  )
+  slot_number = models.PositiveIntegerField()
+  is_active = models.BooleanField(default=True)
+
+  class Meta:
+    constraints = [
+      models.CheckConstraint(
+        condition=models.Q(slot_number__gte=1),
+        name="allocation_positive_slot",
+      ),
+      models.CheckConstraint(
+        condition=models.Q(window_start__in=SERVICE_START_TIMES),
+        name="allocation_valid_window",
+      ),
+      models.UniqueConstraint(
+        fields=[
+          "laundry_room",
+          "service_date",
+          "window_start",
+          "slot_number",
+        ],
+        condition=models.Q(is_active=True),
+        name="unique_active_window_slot",
+      ),
+    ]
+
+class MachineSession(models.Model):
+  assignment = models.ForeignKey(JobAssignment,on_delete=models.PROTECT,related_name="sessions")
+  machine = models.ForeignKey("facilities.Machine",on_delete=models.PROTECT,related_name="sessions",)
+  started_at = models.DateTimeField(default=timezone.now)
+  expected_end = models.DateTimeField()
+  ended_at = models.DateTimeField(null=True, blank=True)
+
+  class Meta:
+    constraints = [
+      models.UniqueConstraint(
+        fields=["machine"],
+        condition=models.Q(ended_at__isnull=True),
+        name="unique_running_machine_session",
+      ),
+      models.CheckConstraint(
+        condition=models.Q(expected_end__gt=models.F("started_at")),
+        name="session_expected_end_after_start",
+      ),
+      models.CheckConstraint(
+        condition=(
+          models.Q(ended_at__isnull=True)
+          | models.Q(ended_at__gte=models.F("started_at"))
+        ),
+        name="session_end_after_start",
+      ),
+    ]
 
 class MachineReservation(models.Model):
   id = models.AutoField(primary_key=True)
+  order = models.ForeignKey(LaundryOrder,on_delete=models.PROTECT,related_name="reservations", null=True, blank=True)
+  assignment = models.ForeignKey(JobAssignment, on_delete=models.PROTECT, related_name="reservations", null=True, blank=True)
   machine = models.ForeignKey('facilities.Machine', on_delete=models.PROTECT)
   service_date = models.DateField()
   window_start = models.TimeField(

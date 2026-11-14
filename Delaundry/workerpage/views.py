@@ -11,6 +11,14 @@ from django.db.models import Q
 from django.utils import timezone
 
 from bookings.models import LaundryOrder
+
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, OperationalError, connection
+from django.shortcuts import redirect
+from django.views.decorators.http import require_POST
+
+from bookings.acceptance import accept_order
 # Create your views here.
 
 @login_required(login_url="accounts:worker_login")
@@ -61,3 +69,37 @@ def task_board(request):
     {"profile": profile,
      "orders": orders},
   )
+
+
+@login_required(login_url="accounts:worker_login")
+@require_POST
+def accept_task(request, order_id):
+  if request.user.role != "worker":
+    return HttpResponseForbidden(
+      "This page is for laundry workers only."
+    )
+
+  try:
+    assignment = accept_order(request.user.pk, order_id)
+  except ValidationError as error:
+    messages.error(request, " ".join(error.messages))
+  except IntegrityError:
+    messages.error(
+      request,
+      "The task or machine availability changed. Please try again.",
+    )
+  except OperationalError as error:
+    if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+      raise
+    messages.error(
+      request,
+      "Another update is in progress. Please try again.",
+    )
+  else:
+    messages.success(
+      request,
+      f"Order #{assignment.order_id} accepted. "
+      f"Agreed payout: S${assignment.agreed_payout:.2f}.",
+    )
+
+  return redirect("workerpage:task_board")
