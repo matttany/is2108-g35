@@ -1,0 +1,31 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Machine availability | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1>Machine availability</h1>
+  <p>{{ machine }}</p>
+
+  <form method="post" action="{% url 'facilities:machine_status' machine_id=machine.pk %}">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.status.id_for_label }}">
+        {{ form.status.label }}
+      </label>
+      {{ form.status }}
+
+      <div class="text-danger" role="alert">
+        {{ form.status.errors }}
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">
+      Save changes
+    </button>
+    <a class="btn btn-outline-secondary" href="{% url 'facilities:list' %}">
+      Cancel
+    </a>
+  </form>
+{% endblock %}

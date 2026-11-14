@@ -18,7 +18,7 @@
             <button class="btn btn-outline-secondary" type="submit">Log out</button>
           </form>
         {% else %}
-          <a href="{% url 'accounts:worker_register' %}">Become a worker</a>
+          <a href="{% url 'adminpanel:login' %}">Staff login</a>
           <a href="{% url 'accounts:worker_login' %}">Worker login</a>
           <a href="{% url 'accounts:login' %}">Customer login</a>
         {% endif %}

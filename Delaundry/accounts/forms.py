@@ -7,6 +7,8 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from facilities.models import Residence
 from .models import User, CustomerProfile, WorkerProfile
 
+from django.contrib.auth import password_validation
+
 class CustomerRegistrationForm(UserCreationForm):
     email = forms.EmailField(max_length=150)
 
@@ -28,6 +30,7 @@ class CustomerRegistrationForm(UserCreationForm):
         widget=forms.PasswordInput(
           render_value=True, # keeps password if validation fails
           attrs={"autocomplete": "new-password"}),
+        help_text=password_validation.password_validators_help_text_html(),
     )
 
     password2 = forms.CharField(
@@ -37,6 +40,7 @@ class CustomerRegistrationForm(UserCreationForm):
             widget=forms.PasswordInput(
               render_value=True,
               attrs={"autocomplete": "new-password"}),
+            help_text="Enter the same password as before, for verification.",
         )
 
     class Meta:
@@ -60,6 +64,19 @@ class CustomerRegistrationForm(UserCreationForm):
         raise forms.ValidationError("This email address is already in use. Please use a different email address.")
 
       return email
+
+    def __init__(self, *args, **kwargs):
+      super().__init__(*args, **kwargs)
+
+      for field in self.fields.values():
+        if isinstance(field.widget, forms.Select):
+          field.widget.attrs["class"] = "form-select"
+        else:
+          field.widget.attrs["class"] = "form-control"
+
+      self.fields["email"].label = "NUS email"
+      self.fields["residence"].label = "Hall"
+      self.fields["residence"].empty_label = "Select your hall"
 
     @transaction.atomic 
     # user and customerprofile saved tgt or not at all
@@ -87,6 +104,7 @@ class CustomerLoginForm(AuthenticationForm):
         max_length=150,
         widget=forms.TextInput(
             attrs={
+              "class": "form-control",
               "autocomplete": "username",
               "placeholder": "Eg. e1234567@u.nus.edu",
             },
@@ -97,7 +115,7 @@ class CustomerLoginForm(AuthenticationForm):
       label="Password",
       strip=False,
       widget=forms.PasswordInput(
-        attrs={"autocomplete": "current-password"},
+        attrs={"class": "form-control","autocomplete": "current-password"},
       ),
       )
 
