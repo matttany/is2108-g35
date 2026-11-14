@@ -34,6 +34,20 @@
         – {{ order.quote.pickup_end|date:"H:i" }}
       </dd>
   
+      <dt class="col-sm-4">Reserved machines</dt>
+      <dd class="col-sm-8">
+        <ul class="list-unstyled mb-0">
+          {% for reservation in order.reserved_pair %}
+            <li>
+              {{ reservation.machine.get_machine_type_display }} {{ reservation.machine.code }}
+              &middot; Block {{ reservation.machine.laundry_room.block }}
+            </li>
+          {% empty %}
+            <li class="text-secondary">No reserved machines recorded.</li>
+          {% endfor %}
+        </ul>
+      </dd>
+
       <dt class="col-sm-4">Return by</dt>
       <dd class="col-sm-8">
         {{ order.quote.delivery_by|date:"d M Y, H:i" }}
