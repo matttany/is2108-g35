@@ -5,7 +5,8 @@ from . import views
 app_name = "adminpanel"
 
 urlpatterns = [
-  path("", views.worker_list, name="index"),
+  path("", views.dashboard, name="index"),
+  path("dashboard/", views.dashboard, name="dashboard"),
   path("login/", views.staff_login, name="login"),
   path("logout/", views.staff_logout, name="logout"),
   path("workers/", views.worker_list, name="worker_list"),

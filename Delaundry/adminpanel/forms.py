@@ -2,6 +2,36 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
 from facilities.models import Residence
+from bookings.models import LaundryOrder
+
+
+class DashboardFilterForm(forms.Form):
+  residence = forms.ModelChoiceField(
+    label="Hall", queryset=Residence.objects.all().order_by("name"),
+    empty_label="All halls", required=False,
+    widget=forms.Select(attrs={"class": "form-select"}),
+  )
+  status = forms.ChoiceField(
+    label="Order status", required=False,
+    choices=[("", "All statuses"), *LaundryOrder._meta.get_field("status").choices],
+    widget=forms.Select(attrs={"class": "form-select"}),
+  )
+  start_date = forms.DateField(
+    label="Submitted from", required=False,
+    widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+  )
+  end_date = forms.DateField(
+    label="Submitted through", required=False,
+    widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+  )
+
+  def clean(self):
+    data = super().clean()
+    start = data.get("start_date")
+    end = data.get("end_date")
+    if start and end and start > end:
+      raise forms.ValidationError("The start date must not be after the end date.")
+    return data
 
 
 class StaffLoginForm(AuthenticationForm):
