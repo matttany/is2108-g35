@@ -1,0 +1,22 @@
+{% extends "customerstorefront/base.html" %}
+{% block title %}Cancel order | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Cancel order #{{ order.pk }}</h1>
+  <div class="card card-body mb-3">
+    <p>{{ quote.residence }} &middot; Block {{ quote.block }} &middot; Unit {{ quote.unit_number }}</p>
+    <p>Pickup: {{ quote.service_start|date:"d M Y, H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }} (Singapore time)</p>
+    <p>Saved price: S${{ quote.total|floatformat:2 }}</p>
+    <p class="mb-0">Status: {{ order.get_status_display }}</p>
+  </div>
+  {% if cancellation_error %}
+    <div class="alert alert-info">{{ cancellation_error }}</div>
+  {% else %}
+    <p>You can cancel a requested or confirmed order before its pickup window starts, provided collection and machine usage have not begun.</p>
+    <p>Cancelling releases the unused machine reservations. The order remains in your history and cannot be reopened; make a new booking if needed.</p>
+    <form method="post" class="mb-3">
+      {% csrf_token %}
+      <button class="btn btn-danger" type="submit">Confirm cancellation</button>
+    </form>
+  {% endif %}
+  <a class="btn btn-outline-secondary" href="{% url 'customerstorefront:order_detail' order.pk %}">Back to order</a>
+{% endblock %}

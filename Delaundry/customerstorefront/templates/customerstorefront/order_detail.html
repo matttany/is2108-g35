@@ -1,11 +1,18 @@
 {% extends "customerstorefront/base.html" %}
 {% block title %}Order #{{ order.pk }} | DeLaundry{% endblock %}
 {% block content %}
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}" role="alert">{{ message }}</div>
+  {% endfor %}
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h3 mb-0">Order #{{ order.pk }}</h1>
     <a href="{% url 'customerstorefront:order_list' %}">Back to my orders</a>
   </div>
   <p>Status: <strong>{{ order.get_status_display }}</strong></p>
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    {% if can_cancel %}<a class="btn btn-outline-danger" href="{% url 'customerstorefront:order_cancel' order.pk %}">Cancel order</a>{% endif %}
+    <a class="btn btn-outline-secondary" href="{% url 'customerstorefront:report_problem' order.pk %}">Report a problem</a>
+  </div>
   {% if order.status == "requested" %}
     <div class="alert alert-info">Your request is waiting for a worker to accept it. It is not confirmed yet.</div>
   {% elif order.status == "cancelled" or order.status == "rejected" %}
@@ -110,5 +117,17 @@
     {% else %}
       <p class="mb-0 text-secondary">No washing or drying cycles have been recorded yet.</p>
     {% endif %}
+  </section>
+  <section class="card card-body mt-4" aria-labelledby="support-heading">
+    <h2 class="h5" id="support-heading">Your support requests</h2>
+    {% for report in support_requests %}
+      <article class="border rounded p-3 mb-3">
+        <h3 class="h6">Report #{{ report.pk }} &middot; {{ report.get_category_display }}</h3>
+        <p class="text-secondary">{{ report.created_at|date:"d M Y, H:i:s" }} &middot; Status: {{ report.get_status_display }}</p>
+        <p class="mb-0">{{ report.description|linebreaksbr }}</p>
+      </article>
+    {% empty %}
+      <p class="mb-0 text-secondary">You have not reported a problem with this order.</p>
+    {% endfor %}
   </section>
 {% endblock %}

@@ -11,9 +11,10 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 from accounts.models import CustomerProfile
 from bookings.availability import get_available_windows
+from bookings.cancellation import cancel_order, cancellation_error
 from bookings.models import DeliveryProof, JobAssignment, LaundryOrder, MachineReservation, PriceQuote
 from bookings.pricing import price_window, save_quote
-from .forms import AvailabilityForm
+from .forms import AvailabilityForm, SupportRequestForm
 from .tracking import get_order_timeline
 
 
@@ -50,9 +51,65 @@ def order_detail(request, order_id):
   context = {
     "order": order, "quote": order.quote, "assignment": assignment, "sessions": sessions,
     "proof": proof,
+    "can_cancel": not cancellation_error(order, assignment),
+    "support_requests": order.support_requests.order_by("-created_at", "-pk"),
     "timeline": get_order_timeline(order, assignment, sessions),
   }
   return render(request, "customerstorefront/order_detail.html", context)
+
+
+@login_required(login_url="accounts:login")
+@never_cache
+@require_http_methods(["GET", "POST"])
+def order_cancel(request, order_id):
+  if not request.user.is_active or request.user.role != "customer":
+    return HttpResponseForbidden("This page is for customers only.")
+  order = get_object_or_404(
+    LaundryOrder.objects.select_related("quote__residence"), pk=order_id, quote__customer=request.user,
+  )
+  if request.method == "POST":
+    try:
+      cancel_order(request.user.pk, order.pk)
+    except ValidationError as error:
+      messages.error(request, " ".join(error.messages))
+    except IntegrityError:
+      messages.error(request, "This order changed. Please refresh and try cancelling again.")
+    except OperationalError as error:
+      if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+        raise
+      messages.error(request, "Another update is in progress. Please try again.")
+    else:
+      messages.success(request, f"Order #{order.pk} is cancelled.")
+    return redirect("customerstorefront:order_detail", order_id=order.pk)
+  assignment = JobAssignment.objects.filter(order=order).first()
+  return render(request, "customerstorefront/order_cancel.html", {
+    "order": order, "quote": order.quote, "cancellation_error": cancellation_error(order, assignment),
+  })
+
+
+@login_required(login_url="accounts:login")
+@never_cache
+@require_http_methods(["GET", "POST"])
+def report_problem(request, order_id):
+  if not request.user.is_active or request.user.role != "customer":
+    return HttpResponseForbidden("This page is for customers only.")
+  order = get_object_or_404(
+    LaundryOrder.objects.select_related("quote__residence"), pk=order_id, quote__customer=request.user,
+  )
+  form = SupportRequestForm(request.POST) if request.method == "POST" else SupportRequestForm()
+  if request.method == "POST" and form.is_valid():
+    report = form.save(commit=False)
+    report.order = order
+    try:
+      report.save()
+    except OperationalError as error:
+      if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+        raise
+      form.add_error(None, "Another update is in progress. Please try again.")
+    else:
+      messages.success(request, f"Report #{report.pk} was submitted. You can view it below.")
+      return redirect("customerstorefront:order_detail", order_id=order.pk)
+  return render(request, "customerstorefront/report_problem.html", {"order": order, "form": form})
 
 
 @login_required(login_url="accounts:login")

@@ -43,7 +43,8 @@ def get_order_timeline(order, assignment, sessions):
     timeline.append({"label": label, "state": state, "timestamp": timestamp})
 
   if stopped:
-    # No cancellation/rejection timestamp exists yet; do not invent one.
+    # Older cancellations and rejected orders may have no recorded timestamp.
     label = "Cancelled" if order.status == "cancelled" else "Rejected"
-    timeline.append({"label": label, "state": "Current", "timestamp": None})
+    timestamp = order.cancelled_at if order.status == "cancelled" else None
+    timeline.append({"label": label, "state": "Current", "timestamp": timestamp})
   return timeline

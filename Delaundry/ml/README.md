@@ -210,7 +210,8 @@ The timeline lists Requested, Confirmed, Picked up, Washing, Drying, Out for ret
 For stopped orders, only actual timestamp records establish earlier progress; missing history is labelled as unrecorded.
 P04 supplies `picked_up_at`, `out_for_return_at` and the collection/washing/drying/return statuses.
 P05 supplies `JobAssignment.completed_at` and the `delivered` status. The timeline reads these recorded timestamps;
-there is no cancellation/rejection timestamp yet. Progress changes remain restricted to the assigned worker's server-side operations.
+C07 supplies `LaundryOrder.cancelled_at`; older cancellations may have no timestamp, and rejected orders still have none.
+Worker progress changes remain restricted to the assigned worker's server-side operations; customers may only cancel under C07's policy.
 
 ## P05: delivery proof and task completion
 
@@ -261,6 +262,36 @@ The customer view first checks order ownership, then loads `DeliveryProof` throu
 photo response are private/no-store. Notes are escaped as text; no filesystem path or public upload URL appears in the page.
 Viewing proof does not change order status, price or reservations. Image validation and verified completion remain P05's responsibility.
 C06 reuses migration `0010_add_delivery_proof`; it adds no further model changes or migrations.
+
+## C07: customer cancellation and support
+
+On an order's detail page, **Cancel order** opens `/storefront/orders/<order_id>/cancel/` with a confirmation step.
+GET only displays the confirmation. A CSRF-protected POST calls `bookings.cancellation.cancel_order(user_id, order_id)`.
+Only the active owning customer may cancel, and only `requested` or `confirmed` orders strictly before the pickup window starts.
+Collection/return/completion timestamps, any machine sessions, or delivery proof also prevent cancellation, even if an inconsistent
+order still says requested/confirmed. Once collection has started or the pickup cutoff has passed, use **Report a problem** instead.
+
+Cancellation locks and rechecks the order, then changes it to `cancelled`, records `cancelled_at`, and releases its future
+`reserved` machine reservations in one transaction. Failure releases nothing and leaves the original status/time unchanged.
+Repeated cancellation is a no-op preserving the original timestamp. Rows are retained for history, including the assignment,
+quoted price and agreed payout. Past reservations are not altered. C02/C03 automatically see released capacity through their existing
+reservation queries. Demand history still counts the original submission, as before.
+
+Cancelled assignments disappear from the worker's ongoing tasks and cannot be accepted, progressed or delivered. Completion remains
+null; P06 must continue to count earnings only for non-null `completed_at` AND order status `delivered`. No refund/payment or worker
+compensation workflow is added. A cancelled order cannot be reopened or resubmitted using the old quote; make a new booking instead.
+
+**Report a problem** opens `/storefront/orders/<order_id>/report/`. Customers can submit late/missing/damaged/other issues, including
+on delivered or cancelled orders, with a required description of up to 2,000 characters. The server supplies the owned order and initial
+`open` status. Submitting a report does not cancel or otherwise modify the order. Reports and their current status appear only on that
+customer's order detail page; descriptions are displayed as escaped text. A successful POST redirects to avoid resubmitting on refresh.
+
+Staff review reports at `/admin/bookings/supportrequest/`: a superuser can access them, or staff can be granted the `view_supportrequest`
+and `change_supportrequest` Django permissions. Staff may change only `status` (`open`/`resolved`); the original order/category/description/time
+are read-only, with adding and deleting disabled. The customer sees the resolved status on their order. No email or messaging is sent.
+
+Migration `0011_add_cancellation_and_support` follows `0010_add_delivery_proof`, adding `LaundryOrder.cancelled_at`, the `SupportRequest`
+model (`order.support_requests`) and validation constraints. Run `python manage.py migrate` before visiting the updated order pages.
 
 ## Main files
 
