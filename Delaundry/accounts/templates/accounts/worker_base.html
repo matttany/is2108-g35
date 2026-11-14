@@ -13,6 +13,7 @@
         <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% url 'accounts:worker_home' %}">DeLaundry</a>
         {% if user.is_authenticated and user.role == 'worker' %}
           <a href="{% url 'workerpage:task_board' %}">Open tasks</a>
+          <a href="{% url 'workerpage:my_tasks' %}">My tasks</a>
           <a href="{% url 'accounts:worker_home' %}">My account</a>
           <form method="post" action="{% url 'accounts:worker_logout' %}">
             {% csrf_token %}

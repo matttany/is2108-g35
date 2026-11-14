@@ -10,7 +10,7 @@ from accounts.models import WorkerProfile
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 
-from bookings.models import LaundryOrder, MachineReservation
+from bookings.models import JobAssignment, LaundryOrder, MachineReservation, MachineSession
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -19,6 +19,7 @@ from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
 from bookings.acceptance import accept_order
+from bookings.progress import update_task
 # Create your views here.
 
 @login_required(login_url="accounts:worker_login")
@@ -84,6 +85,82 @@ def task_board(request):
 
 
 @login_required(login_url="accounts:worker_login")
+@require_GET
+def my_tasks(request):
+  if request.user.role != "worker":
+    return HttpResponseForbidden("This page is for laundry workers only.")
+
+  profile = WorkerProfile.objects.filter(user=request.user).first()
+  if profile is None:
+    return HttpResponseForbidden(
+      "Your worker profile is missing."
+    )
+
+  assignments = (
+    JobAssignment.objects
+    .filter(
+      worker=profile,
+      order__status__in=[
+        "confirmed", "picked_up", "washing", "drying", "out_for_return",
+      ],
+    )
+    .select_related("order__quote__customer", "order__quote__residence")
+    .prefetch_related(
+      Prefetch(
+        "order__reservations",
+        queryset=(
+          MachineReservation.objects
+          .filter(status="reserved")
+          .select_related("machine__laundry_room")
+          .order_by("machine__machine_type", "machine__code")
+        ),
+        to_attr="reserved_pair",
+      )
+    )
+    .order_by("order__quote__service_date", "order__quote__window_start", "pk")
+  )
+  assignments = assignments.prefetch_related(
+    Prefetch(
+      "sessions",
+      queryset=MachineSession.objects.filter(machine__machine_type="washer")
+      .select_related("machine").order_by("started_at"),
+      to_attr="wash_sessions",
+    ),
+    Prefetch(
+      "sessions",
+      queryset=MachineSession.objects.filter(machine__machine_type="dryer")
+      .select_related("machine").order_by("started_at"),
+      to_attr="dry_sessions",
+    ),
+  )
+  return render(
+    request,
+    "workerpage/my_tasks.html",
+    {"assignments": assignments},
+  )
+
+
+@login_required(login_url="accounts:worker_login")
+@require_POST
+def task_progress(request, assignment_id):
+  if request.user.role != "worker":
+    return HttpResponseForbidden("This page is for laundry workers only.")
+  try:
+    feedback = update_task(request.user.pk, assignment_id, request.POST.get("action"))
+  except ValidationError as error:
+    messages.error(request, " ".join(error.messages))
+  except IntegrityError:
+    messages.error(request, "The task or machine changed. Please refresh and try again.")
+  except OperationalError as error:
+    if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+      raise
+    messages.error(request, "Another update is in progress. Please try again.")
+  else:
+    messages.success(request, feedback)
+  return redirect("workerpage:my_tasks")
+
+
+@login_required(login_url="accounts:worker_login")
 @require_POST
 def accept_task(request, order_id):
   if request.user.role != "worker":
@@ -100,7 +177,7 @@ def accept_task(request, order_id):
       request,
       "The task or machine availability changed. Please try again.",
     )
-  except OperationalError as error:
+  except OperationalError as error: # in case 2 ppl accept the same order at the same time, prevents database crash
     if connection.vendor != "sqlite" or "locked" not in str(error).lower():
       raise
     messages.error(
