@@ -16,7 +16,13 @@ def get_available_windows(residence, service_date, block):
   if service_date < now.date() or service_date > now.date() + timedelta(days=BOOKING_DAYS_AHEAD):
     return []
 
-  rooms = list(LaundryRoom.objects.filter(residence=residence, block=block, is_active=True))
+  rooms = list(
+    LaundryRoom.objects.filter(
+      residence=residence,
+      block=block,
+      is_active=True,
+    )
+  )
   machines = list(Machine.objects.filter(laundry_room__in=rooms, status="ACTIVE").order_by("code"))
   reservations = list(MachineReservation.objects.filter(
     machine__laundry_room__residence=residence,
