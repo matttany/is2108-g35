@@ -7,10 +7,10 @@ from django.views.decorators.http import require_GET
 from accounts.models import WorkerProfile
 
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 
-from bookings.models import LaundryOrder
+from bookings.models import LaundryOrder, MachineReservation
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -60,6 +60,18 @@ def task_board(request):
       )
     )
     .select_related("quote__customer", "quote__residence")
+    .prefetch_related(
+      Prefetch(
+        "reservations",
+        queryset=(
+          MachineReservation.objects
+          .filter(status="reserved")
+          .select_related("machine__laundry_room")
+          .order_by("machine__machine_type", "machine__code")
+        ),
+        to_attr="reserved_pair",
+      )
+    )
     .order_by("quote__service_date", "quote__window_start", "created_at")
   )
 
