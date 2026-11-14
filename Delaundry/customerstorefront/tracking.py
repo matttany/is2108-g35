@@ -18,6 +18,8 @@ def get_order_timeline(order, assignment, sessions):
       timestamps["picked_up"] = assignment.picked_up_at
     if assignment.out_for_return_at is not None:
       timestamps["out_for_return"] = assignment.out_for_return_at
+    if assignment.completed_at is not None:
+      timestamps["delivered"] = assignment.completed_at
   for session in sessions:
     stage = {"washer": "washing", "dryer": "drying"}.get(session.machine.machine_type)
     if stage is not None:

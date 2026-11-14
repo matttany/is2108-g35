@@ -79,6 +79,7 @@
         {% endfor %}
         {% if order.status == "out_for_return" %}
           <div class="alert alert-info mt-3">Laundry is ready for return. Return by {{ quote.delivery_by|date:"d M Y, H:i" }}.</div>
+          <a class="btn btn-primary" href="{% url 'workerpage:delivery_proof' assignment.pk %}">Record delivery</a>
         {% endif %}
         {% if order.status == "confirmed" %}
           <p class="text-secondary mt-3">Record collection during the first 15 minutes of the service window.</p>

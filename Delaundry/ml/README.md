@@ -208,10 +208,59 @@ Passing a pickup/delivery time does not change status or fabricate progress. Vie
 
 The timeline lists Requested, Confirmed, Picked up, Washing, Drying, Out for return and Delivered, plus cancellation/rejection when applicable.
 For stopped orders, only actual timestamp records establish earlier progress; missing history is labelled as unrecorded.
-The current shared model still permits only `requested`, `confirmed` and `cancelled`. P04/P05 must extend its status choices/check constraint
-and increase its current 10-character field length for `out_for_return`, and provide authorised status-update handling.
-There are no pickup, return, delivery or cancellation event timestamps yet; those cannot be displayed until the shared progress fields/events are agreed.
-C05's display is ready for the named later stages, but full progression still depends on P04/P05. No shared model/migration was added here.
+P04 supplies `picked_up_at`, `out_for_return_at` and the collection/washing/drying/return statuses.
+P05 supplies `JobAssignment.completed_at` and the `delivered` status. The timeline reads these recorded timestamps;
+there is no cancellation/rejection timestamp yet. Progress changes remain restricted to the assigned worker's server-side operations.
+
+## P05: delivery proof and task completion
+
+After P04 finishes drying, the assigned worker opens **My tasks** (`/worker/my-tasks/`) and selects **Record delivery**.
+The upload/receipt URL is `/worker/my-tasks/<assignment_id>/delivery/` (assignment ID, not order ID).
+Upload one JPEG or PNG photo, up to 5 MiB and 12 million pixels, with an optional note of up to 500 characters.
+The server decodes and re-encodes the image, removes metadata, and uses a generated filename. Unsupported/corrupt images are rejected.
+
+`bookings.delivery.complete_delivery(user_id, assignment_id, photo, note="")` rechecks the active, approved assigned worker;
+`is_available` is not required for finishing existing jobs. It requires `out_for_return`, recorded collection/return preparation,
+exactly one completed 30-minute washer session followed by one completed 30-minute dryer session, and this order's reserved pair
+in the quote's room/block/date/window. A late delivery may still be recorded truthfully; times are never backdated to the deadline.
+
+The operation owns a durable database transaction: it saves `DeliveryProof`, sets `JobAssignment.completed_at` and changes the order to
+`delivered` together. Do not wrap this service in another atomic block. A failed database write rolls back completion and removes a photo
+already saved by that attempt. Storage failures are shown as retry messages. The database and filesystem are separate systems, so an abrupt
+process crash can still leave an orphan file; deployment backups/maintenance should cover private uploads as well as the database.
+
+`DeliveryProof.assignment` is one-to-one (`assignment.delivery_proof`), giving one immutable proof per order through `assignment.order`.
+It records `photo`, `note`, `uploaded_by` and `uploaded_at`. Assignment completion is represented by non-null `completed_at`, rather than
+duplicating the order status. Repeated submissions reuse the original proof, timestamp and note. Reservations remain `reserved` for the
+full two-hour window; completion does not release them or change the saved price/payout. `WindowAllocation` remains unused.
+
+Photos live under `PRIVATE_PROOF_ROOT` (default `Delaundry/private_uploads/`), which is ignored by its own `.gitignore`.
+Never serve that directory using a public media route or web-server alias. The protected GET endpoint
+`/bookings/delivery-proofs/<proof_id>/photo/` authorizes the active owning customer, assigned worker or staff on every request and sends
+private/no-store responses. Templates use this route instead of `photo.url`.
+
+Setup from the repository root:
+
+```powershell
+python -m pip install -r requirements.txt
+cd Delaundry
+python manage.py migrate
+python manage.py runserver
+```
+
+Migration `0010_add_delivery_proof` depends on P04's `0009_add_drying_and_return_progress`. Existing demo orders still need to go through
+acceptance and P04 before they can be delivered; do not bypass stages just to make the upload button appear.
+
+## C06: customer delivery proof
+
+Open **My orders**, then an order at `/storefront/orders/<order_id>/`. Its **Delivery proof** section displays the return photo,
+optional note, uploader name (or username) and upload time in Singapore time. Selecting the photo opens the protected full image.
+Pending orders show a no-proof message. Historical delivered orders without proof show that evidence is unavailable, rather than inventing it.
+
+The customer view first checks order ownership, then loads `DeliveryProof` through that order's assignment. Both the order details and
+photo response are private/no-store. Notes are escaped as text; no filesystem path or public upload URL appears in the page.
+Viewing proof does not change order status, price or reservations. Image validation and verified completion remain P05's responsibility.
+C06 reuses migration `0010_add_delivery_proof`; it adds no further model changes or migrations.
 
 ## Main files
 

@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.functions import Round
 from django.utils import timezone
 from facilities.models import BLOCK_CHOICES
+from .storage import proof_storage, proof_upload_path
 
 
 SERVICE_START_TIMES = [time(hour) for hour in range(8, 21, 2)]
@@ -84,6 +85,7 @@ class LaundryOrder(models.Model):
       ("washing", "Washing"),
       ("drying", "Drying"),
       ("out_for_return", "Out for return"),
+      ("delivered", "Delivered"),
       ("cancelled", "Cancelled"),
     ],
     default="requested",
@@ -94,7 +96,7 @@ class LaundryOrder(models.Model):
       models.CheckConstraint(
         condition=models.Q(status__in=[
           "requested", "confirmed", "picked_up", "washing", "drying",
-          "out_for_return", "cancelled",
+          "out_for_return", "delivered", "cancelled",
         ]),
         name="order_valid_status",
       ),
@@ -110,6 +112,8 @@ class JobAssignment(models.Model):
   accepted_at = models.DateTimeField(default=timezone.now)
   picked_up_at = models.DateTimeField(null=True, blank=True)
   out_for_return_at = models.DateTimeField(null=True, blank=True)
+  # A timestamp marks completion without a second assignment status to maintain.
+  completed_at = models.DateTimeField(null=True, blank=True)
 
   class Meta:
     constraints = [
@@ -117,7 +121,28 @@ class JobAssignment(models.Model):
         condition=models.Q(agreed_payout__gte=0),
         name="assignment_nonnegative_payout",
       ),
+      models.CheckConstraint(
+        condition=(models.Q(completed_at__isnull=True) | models.Q(
+          out_for_return_at__isnull=False, completed_at__gte=models.F("out_for_return_at"),
+        )),
+        name="assignment_completion_after_return",
+      ),
     ]
+
+
+class DeliveryProof(models.Model):
+  # Each assignment already belongs to exactly one order.
+  assignment = models.OneToOneField(JobAssignment, on_delete=models.PROTECT, related_name="delivery_proof")
+  photo = models.ImageField(storage=proof_storage, upload_to=proof_upload_path)
+  note = models.CharField(max_length=500, blank=True)
+  uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+  uploaded_at = models.DateTimeField(default=timezone.now)
+
+  class Meta:
+    constraints = [
+      models.CheckConstraint(condition=~models.Q(photo=""), name="delivery_proof_has_photo"),
+    ]
+
 
 class WindowAllocation(models.Model):
   assignment = models.OneToOneField(JobAssignment, on_delete=models.PROTECT,related_name="allocation")

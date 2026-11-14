@@ -1,8 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.cache import never_cache
 
 from accounts.models import WorkerProfile
 
@@ -10,7 +11,7 @@ from accounts.models import WorkerProfile
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 
-from bookings.models import JobAssignment, LaundryOrder, MachineReservation, MachineSession
+from bookings.models import DeliveryProof, JobAssignment, LaundryOrder, MachineReservation, MachineSession
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -20,7 +21,49 @@ from django.views.decorators.http import require_POST
 
 from bookings.acceptance import accept_order
 from bookings.progress import update_task
+from bookings.delivery import complete_delivery
+from .forms import DeliveryProofForm
 # Create your views here.
+
+
+@login_required(login_url="accounts:worker_login")
+@never_cache
+@require_http_methods(["GET", "POST"])
+def delivery_proof(request, assignment_id):
+  profile = WorkerProfile.objects.filter(user=request.user).first()
+  if (
+    request.user.role != "worker" or not request.user.is_active
+    or profile is None or profile.approval_status != "approved"
+  ):
+    return HttpResponseForbidden("An active, approved worker account is required.")
+  assignment = get_object_or_404(
+    JobAssignment.objects.select_related("order__quote__residence"),
+    pk=assignment_id, worker=profile,
+  )
+  proof = DeliveryProof.objects.select_related("uploaded_by").filter(assignment=assignment).first()
+  form = DeliveryProofForm(request.POST, request.FILES) if request.method == "POST" else DeliveryProofForm()
+  # A completed submission is a receipt; revisiting it never replaces the photo.
+  if request.method == "POST" and proof is not None:
+    return redirect("workerpage:delivery_proof", assignment_id=assignment.pk)
+  if request.method == "POST" and form.is_valid():
+    try:
+      complete_delivery(request.user.pk, assignment.pk, form.cleaned_data["photo"], form.cleaned_data["note"])
+    except ValidationError as error:
+      form.add_error(None, " ".join(error.messages))
+    except IntegrityError:
+      form.add_error(None, "This task changed. Refresh the page before trying again.")
+    except OperationalError as error:
+      if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+        raise
+      form.add_error(None, "Another update is in progress. Please try again.")
+    except OSError:
+      form.add_error(None, "The photo could not be saved. Please try again.")
+    else:
+      messages.success(request, "Delivery recorded. Your task is completed.")
+      return redirect("workerpage:delivery_proof", assignment_id=assignment.pk)
+  return render(request, "workerpage/delivery_proof.html", {
+    "assignment": assignment, "quote": assignment.order.quote, "proof": proof, "form": form,
+  })
 
 @login_required(login_url="accounts:worker_login")
 @require_GET
