@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.shortcuts import get_object_or_404, render
 
 from django.contrib.auth.decorators import login_required
@@ -8,7 +10,7 @@ from django.views.decorators.cache import never_cache
 from accounts.models import WorkerProfile
 
 
-from django.db.models import Prefetch, Q
+from django.db.models import Count, Prefetch, Q, Sum
 from django.utils import timezone
 
 from bookings.models import DeliveryProof, JobAssignment, LaundryOrder, MachineReservation, MachineSession
@@ -125,6 +127,40 @@ def task_board(request):
     "workerpage/task_board.html",
     {"profile": profile,
      "orders": orders},
+  )
+
+
+@login_required(login_url="accounts:worker_login")
+@require_GET
+def earnings(request):
+  if request.user.role != "worker":
+    return HttpResponseForbidden("This page is for laundry workers only.")
+
+  profile = WorkerProfile.objects.filter(user=request.user).first()
+  if profile is None:
+    return HttpResponseForbidden("Your worker profile is missing.")
+
+  completed_assignments = (
+    JobAssignment.objects
+    .filter(
+      worker=profile,
+      completed_at__isnull=False,
+      order__status="delivered",
+    )
+    .order_by("-completed_at", "-pk")
+  )
+  summary = completed_assignments.aggregate(
+    total=Sum("agreed_payout", default=Decimal("0.00")),
+    count=Count("pk"),
+  )
+  return render(
+    request,
+    "workerpage/earnings.html",
+    {
+      "completed_assignments": completed_assignments,
+      "total_earnings": summary["total"],
+      "completed_count": summary["count"],
+    },
   )
 
 

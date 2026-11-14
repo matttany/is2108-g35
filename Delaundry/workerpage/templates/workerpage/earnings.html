@@ -1,0 +1,45 @@
+{% extends "accounts/worker_base.html" %}
+
+{% block title %}My earnings | DeLaundry{% endblock %}
+
+{% block content %}
+  <h1 class="h3">My earnings</h1>
+  <p class="text-secondary">Payouts from completed laundry jobs!</p>
+
+  <section class="border rounded p-3 mb-4" aria-labelledby="earnings-summary">
+    <h2 class="h5" id="earnings-summary">Completed-job earnings</h2>
+    <p class="fs-3 fw-bold mb-1">${{ total_earnings|floatformat:2 }}</p>
+    <p class="mb-0 text-secondary">{{ completed_count }} completed job{{ completed_count|pluralize }}</p>
+  </section>
+
+  <section aria-labelledby="earnings-history">
+    <h2 class="h5" id="earnings-history">Completed-job history</h2>
+    <p class="small text-secondary">Ongoing jobs are not included in completed earnings.</p>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Order</th>
+            <th scope="col">Task Completed</th>
+            <th scope="col">Earning status</th>
+            <th scope="col" class="text-end">Payout</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in completed_assignments %}
+            <tr>
+              <td>Order #{{ assignment.order_id }}</td>
+              <td>{{ assignment.completed_at|date:"d M Y, H:i" }}</td>
+              <td><span class="badge text-bg-success">Earned</span></td>
+              <td class="text-end">S${{ assignment.agreed_payout|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-secondary">You have no earnings yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <a class="btn btn-outline-secondary" href="{% url 'workerpage:my_tasks' %}">Back to my tasks</a>
+{% endblock %}
