@@ -193,6 +193,26 @@ list(LaundryOrder.objects.filter(quote__customer__username__startswith="demo_blo
 ))
 ```
 
+## C05: customer order history and tracking
+
+Customers can open **My orders** from their home page or the storefront navigation.
+`/storefront/orders/` lists only the signed-in customer's orders, including previous and cancelled requests, newest submissions first (10 per page).
+`/storefront/orders/<id>/` displays the saved pickup address/window, delivery deadline, fixed price, order status and progress timeline.
+Other customers receive 404 for that detail URL; workers cannot access these customer pages. Both routes are read-only GET endpoints.
+Quote pages link to their submitted order's tracking page.
+
+Worker details and acceptance time come from `JobAssignment.worker` and `accepted_at` after P03 acceptance.
+Recorded machine activity comes from the assignment's `MachineSession` rows: start, expected end and actual end are shown separately.
+Washing/drying timeline timestamps use the first recorded start for that cycle type. Expected end times are never treated as actual completion.
+Passing a pickup/delivery time does not change status or fabricate progress. Viewing tracking does not reprice orders or modify reservations.
+
+The timeline lists Requested, Confirmed, Picked up, Washing, Drying, Out for return and Delivered, plus cancellation/rejection when applicable.
+For stopped orders, only actual timestamp records establish earlier progress; missing history is labelled as unrecorded.
+The current shared model still permits only `requested`, `confirmed` and `cancelled`. P04/P05 must extend its status choices/check constraint
+and increase its current 10-character field length for `out_for_return`, and provide authorised status-update handling.
+There are no pickup, return, delivery or cancellation event timestamps yet; those cannot be displayed until the shared progress fields/events are agreed.
+C05's display is ready for the named later stages, but full progression still depends on P04/P05. No shared model/migration was added here.
+
 ## Main files
 
 - `ml/features.py`: shared feature names and local calendar lookup.
@@ -200,6 +220,7 @@ list(LaundryOrder.objects.filter(quote__customer__username__startswith="demo_blo
 - `ml/train_model.py`: preprocessing, training, chronological evaluation and model export.
 - `bookings/pricing.py`: live inputs, inference, price calculation and quote saving.
 - `bookings/models.py`: PriceQuote snapshot and minimal LaundryOrder ledger.
-- `customerstorefront/views.py`: customer-only browsing, quote creation and quote display.
+- `customerstorefront/views.py`: customer-only availability, quotes, submission, order history and details.
+- `customerstorefront/tracking.py`: read-only status timeline based on stored status and timestamps.
 
 No persistent tests were added at the user's request. Verification used Django checks and disposable in-memory database requests.

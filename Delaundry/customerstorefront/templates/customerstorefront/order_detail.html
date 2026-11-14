@@ -1,0 +1,89 @@
+{% extends "customerstorefront/base.html" %}
+{% block title %}Order #{{ order.pk }} | DeLaundry{% endblock %}
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Order #{{ order.pk }}</h1>
+    <a href="{% url 'customerstorefront:order_list' %}">Back to my orders</a>
+  </div>
+  <p>Status: <strong>{{ order.get_status_display }}</strong></p>
+  {% if order.status == "requested" %}
+    <div class="alert alert-info">Your request is waiting for a worker to accept it. It is not confirmed yet.</div>
+  {% elif order.status == "cancelled" or order.status == "rejected" %}
+    <div class="alert alert-warning">This request is {{ order.get_status_display|lower }}.</div>
+  {% endif %}
+  <p class="text-secondary">All times are Singapore time. Refresh this page to see the latest recorded updates.</p>
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <section class="card card-body h-100" aria-labelledby="pickup-heading">
+        <h2 class="h5" id="pickup-heading">Pickup and delivery</h2>
+        <dl class="row mb-0">
+          <dt class="col-sm-5">Hall</dt><dd class="col-sm-7">{{ quote.residence }}</dd>
+          <dt class="col-sm-5">Block</dt><dd class="col-sm-7">{{ quote.get_block_display|default:"Not recorded" }}</dd>
+          <dt class="col-sm-5">Unit</dt><dd class="col-sm-7">{{ quote.unit_number }}</dd>
+          <dt class="col-sm-5">Pickup window</dt><dd class="col-sm-7">{{ quote.service_date|date:"d M Y" }}, {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}</dd>
+          <dt class="col-sm-5">Delivery deadline</dt><dd class="col-sm-7">{{ quote.delivery_by|date:"d M Y, H:i" }}</dd>
+          <dt class="col-sm-5">Submitted</dt><dd class="col-sm-7">{{ order.created_at|date:"d M Y, H:i:s" }}</dd>
+          <dt class="col-sm-5">Assigned worker</dt>
+          <dd class="col-sm-7">{% if assignment %}{{ assignment.worker.user.name|default:assignment.worker.user.username }}{% else %}Not assigned{% endif %}</dd>
+          {% if assignment %}<dt class="col-sm-5">Worker accepted</dt><dd class="col-sm-7">{{ assignment.accepted_at|date:"d M Y, H:i:s" }}</dd>{% endif %}
+        </dl>
+      </section>
+    </div>
+    <div class="col-12 col-lg-6">
+      <section class="card card-body h-100" aria-labelledby="price-heading">
+        <h2 class="h5" id="price-heading">Saved price (SGD)</h2>
+        <table class="table">
+          <tbody>
+            <tr><th scope="row">Washing and drying</th><td class="text-end">${{ quote.machine_fee|floatformat:2 }}</td></tr>
+            <tr><th scope="row">Worker fee</th><td class="text-end">${{ quote.worker_fee|floatformat:2 }}</td></tr>
+            <tr><th scope="row">Platform fee</th><td class="text-end">${{ quote.platform_fee|floatformat:2 }}</td></tr>
+            <tr class="table-light"><th scope="row">Total</th><td class="text-end fw-bold">${{ quote.total|floatformat:2 }}</td></tr>
+          </tbody>
+        </table>
+        <p class="mb-0">These are the prices saved when you submitted your request.</p>
+      </section>
+    </div>
+  </div>
+  <section class="card card-body mt-4" aria-labelledby="progress-heading">
+    <h2 class="h5" id="progress-heading">Order progress</h2>
+    <p class="text-secondary">Recorded times show actual updates. Passing a scheduled time does not automatically change your order's status.</p>
+    <ol class="list-group list-group-numbered">
+      {% for step in timeline %}
+        <li class="list-group-item d-flex align-items-start gap-2"{% if step.state == "Current" %} aria-current="step"{% endif %}>
+          <div class="flex-grow-1">
+            <strong>{{ step.label }}</strong>
+            <span class="badge {% if step.state == 'Current' %}text-bg-primary{% elif step.state == 'Recorded' or step.state == 'Reached' %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-2">{{ step.state }}</span>
+            {% if step.timestamp %}
+              <small class="d-block text-secondary">{{ step.timestamp|date:"d M Y, H:i:s" }}</small>
+            {% elif step.state == "Current" or step.state == "Reached" %}
+              <small class="d-block text-secondary">Time not recorded</small>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+  <section class="card card-body mt-4" aria-labelledby="cycles-heading">
+    <h2 class="h5" id="cycles-heading">Recorded machine cycles</h2>
+    {% if sessions %}
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <caption>Expected completion is a scheduled time; actual completion appears only when recorded.</caption>
+          <thead><tr><th scope="col">Machine</th><th scope="col">Started</th><th scope="col">Expected end</th><th scope="col">Actual end</th></tr></thead>
+          <tbody>
+            {% for session in sessions %}
+              <tr>
+                <td>{{ session.machine.get_machine_type_display }} {{ session.machine.code }} &middot; {{ session.machine.laundry_room.get_block_display }}</td>
+                <td>{{ session.started_at|date:"d M Y, H:i:s" }}</td>
+                <td>{{ session.expected_end|date:"d M Y, H:i:s" }}</td>
+                <td>{{ session.ended_at|date:"d M Y, H:i:s"|default:"Not recorded" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="mb-0 text-secondary">No washing or drying cycles have been recorded yet.</p>
+    {% endif %}
+  </section>
+{% endblock %}

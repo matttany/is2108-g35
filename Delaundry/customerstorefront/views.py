@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.db import IntegrityError, OperationalError, connection, transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -9,9 +10,43 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 from accounts.models import CustomerProfile
 from bookings.availability import get_available_windows
-from bookings.models import LaundryOrder, MachineReservation, PriceQuote
+from bookings.models import JobAssignment, LaundryOrder, MachineReservation, PriceQuote
 from bookings.pricing import price_window, save_quote
 from .forms import AvailabilityForm
+from .tracking import get_order_timeline
+
+
+@login_required(login_url="accounts:login")
+@require_GET
+def order_list(request):
+  if not request.user.is_active or request.user.role != "customer":
+    return HttpResponseForbidden("This page is for customers only.")
+  # Include previous orders even if the customer has since changed their address.
+  orders = LaundryOrder.objects.filter(quote__customer=request.user).select_related(
+    "quote__residence",
+  ).order_by("-created_at", "-pk")
+  page = Paginator(orders, 10).get_page(request.GET.get("page"))
+  return render(request, "customerstorefront/order_list.html", {"page": page})
+
+
+@login_required(login_url="accounts:login")
+@require_GET
+def order_detail(request, order_id):
+  if not request.user.is_active or request.user.role != "customer":
+    return HttpResponseForbidden("This page is for customers only.")
+  order = get_object_or_404(
+    LaundryOrder.objects.select_related("quote__residence"),
+    pk=order_id, quote__customer=request.user,
+  )
+  assignment = JobAssignment.objects.select_related("worker__user").filter(order=order).first()
+  sessions = []
+  if assignment is not None:
+    sessions = list(assignment.sessions.select_related("machine__laundry_room").order_by("started_at", "pk"))
+  context = {
+    "order": order, "quote": order.quote, "assignment": assignment, "sessions": sessions,
+    "timeline": get_order_timeline(order, assignment, sessions),
+  }
+  return render(request, "customerstorefront/order_detail.html", context)
 
 
 @login_required(login_url="accounts:login")
