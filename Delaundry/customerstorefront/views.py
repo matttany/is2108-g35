@@ -1,12 +1,15 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, OperationalError, connection, transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from accounts.models import CustomerProfile
 from bookings.availability import get_available_windows
-from bookings.models import PriceQuote
+from bookings.models import LaundryOrder, PriceQuote
 from bookings.pricing import price_window, save_quote
 from .forms import AvailabilityForm
 
@@ -75,4 +78,57 @@ def quote_detail(request, quote_id):
     return HttpResponseForbidden("This page is for customers only.")
   # Filtering by the logged-in customer prevents access to another person's quote.
   quote = get_object_or_404(PriceQuote.objects.select_related("residence"), pk=quote_id, customer=request.user)
-  return render(request, "customerstorefront/quote_detail.html", {"quote": quote})
+  # Quote expiry only limits submission; it does not cancel an existing order.
+  order = LaundryOrder.objects.filter(quote=quote).first()
+  return render(request, "customerstorefront/quote_detail.html", {"quote": quote, "order": order})
+
+
+@login_required(login_url="accounts:login")
+@require_POST
+def submit_request(request, quote_id):
+  if not request.user.is_active or request.user.role != "customer":
+    return HttpResponseForbidden("This page is for customers only.")
+
+  try:
+    with transaction.atomic():
+      quote = get_object_or_404(
+        PriceQuote.objects.select_for_update().select_related("residence"),
+        pk=quote_id, customer=request.user,
+      )
+      # A double-click or retry shows the existing order, even if its quote has since expired.
+      if LaundryOrder.objects.filter(quote=quote).exists():
+        return redirect("customerstorefront:quote_detail", quote_id=quote.pk)
+
+      profile = CustomerProfile.objects.select_for_update().select_related("residence").filter(user=request.user).first()
+      if profile is None:
+        raise ValidationError("Your customer profile is missing. Please contact staff.")
+      if not quote.block or (
+        profile.residence != quote.residence
+        or profile.block != quote.block
+        or profile.unitNum != quote.unit_number
+      ):
+        raise ValidationError("Your pickup address has changed or is incomplete. Please get a new quote.")
+      if quote.is_expired:
+        raise ValidationError("This quote has expired. Please choose a pickup time and get a new quote.")
+
+      windows = get_available_windows(profile.residence, quote.service_date, profile.block)
+      if not any(window["window_start"] == quote.window_start for window in windows):
+        raise ValidationError("This pickup window is no longer available. Please choose another time.")
+      if quote.is_expired:
+        raise ValidationError("This quote expired while availability was being checked. Please get a new quote.")
+
+      # Reuse the stored quote and its total; submission never recalculates prices.
+      LaundryOrder.objects.create(quote=quote, status="requested")
+  except ValidationError as error:
+    messages.error(request, " ".join(error.messages))
+  except IntegrityError:
+    # The OneToOne constraint protects against concurrent submissions of the same quote.
+    if not LaundryOrder.objects.filter(quote_id=quote_id, quote__customer=request.user).exists():
+      raise
+  except OperationalError as error:
+    # SQLite cannot lock individual rows; a competing write may need a retry.
+    if connection.vendor != "sqlite" or "locked" not in str(error).lower():
+      raise
+    messages.error(request, "Another update is in progress. Please try submitting your request again.")
+
+  return redirect("customerstorefront:quote_detail", quote_id=quote_id)
