@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from bookings import clock
+
 from accounts.models import CustomerProfile, WorkerProfile
 from bookings.models import LaundryOrder, MachineReservation, MachineSession, SERVICE_START_TIMES
 from facilities.models import Machine, Residence
@@ -12,7 +14,7 @@ ACTIVE_ORDER_STATUSES = ["confirmed", "picked_up", "washing", "drying", "out_for
 
 
 def dashboard_data(filters, now=None):
-  now = now or timezone.localtime()
+  now = now or clock.localtime()
   orders = LaundryOrder.objects.all()
   customers = CustomerProfile.objects.filter(user__role="customer")
   workers = WorkerProfile.objects.filter(

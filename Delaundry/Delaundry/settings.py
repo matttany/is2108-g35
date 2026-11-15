@@ -10,7 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
+import re
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -67,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'bookings.context_processors.demo_clock',
             ],
         },
     },
@@ -125,6 +130,22 @@ STATIC_URL = 'static/'
 
 # Do not expose this folder through a public media/static route.
 PRIVATE_PROOF_ROOT = BASE_DIR / 'private_uploads'
+
+# Opt in per terminal; normal database, uploads and authentication time stay separate.
+DEMO_MODE = os.environ.get('DELAUNDRY_DEMO') == '1'
+if DEMO_MODE:
+    if not DEBUG:
+        raise ImproperlyConfigured('Demo mode is only available with DEBUG=True.')
+    DEMO_SESSION = os.environ.get('DELAUNDRY_DEMO_SESSION', 'take1')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{1,40}', DEMO_SESSION):
+        raise ImproperlyConfigured('Use 1-40 letters, numbers, underscores or hyphens for the demo session.')
+    DEMO_ROOT = BASE_DIR / 'demo_data' / DEMO_SESSION
+    DEMO_ROOT.mkdir(parents=True, exist_ok=True)
+    DATABASES['default']['NAME'] = DEMO_ROOT / 'db.sqlite3'
+    PRIVATE_PROOF_ROOT = DEMO_ROOT / 'uploads'
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+    SESSION_COOKIE_NAME = f'delaundry_demo_{DEMO_SESSION}'
+    CSRF_COOKIE_NAME = f'delaundry_demo_csrf_{DEMO_SESSION}'
 
 
 # Email

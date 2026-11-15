@@ -1,7 +1,7 @@
 from datetime import time, timedelta
 
 from django import forms
-from django.utils import timezone
+from bookings import clock
 
 from bookings.availability import BOOKING_DAYS_AHEAD
 from bookings.models import SERVICE_START_TIMES, SupportRequest
@@ -35,13 +35,13 @@ class AvailabilityForm(forms.Form):
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    today = timezone.localdate()
+    today = clock.localdate()
     self.fields["date"].widget.attrs["min"] = today.isoformat()
     self.fields["date"].widget.attrs["max"] = (today + timedelta(days=BOOKING_DAYS_AHEAD)).isoformat()
 
   def clean_date(self):
     selected_date = self.cleaned_data["date"]
-    today = timezone.localdate()
+    today = clock.localdate()
     if selected_date < today:
       raise forms.ValidationError("Please choose today or a future date.")
     if selected_date > today + timedelta(days=BOOKING_DAYS_AHEAD):

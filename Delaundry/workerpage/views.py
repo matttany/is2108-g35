@@ -11,7 +11,7 @@ from accounts.models import WorkerProfile
 
 
 from django.db.models import Count, Prefetch, Q, Sum
-from django.utils import timezone
+from bookings import clock
 
 from bookings.models import DeliveryProof, JobAssignment, LaundryOrder, MachineReservation, MachineSession
 
@@ -89,7 +89,7 @@ def task_board(request):
       "You must be approved and available to browse tasks."
     )
 
-  now = timezone.localtime()
+  now = clock.localtime()
 
   orders = (
     LaundryOrder.objects
@@ -213,7 +213,7 @@ def my_tasks(request):
       to_attr="dry_sessions",
     ),
   )
-  checked_at = timezone.now()
+  checked_at = clock.now()
   for assignment in assignments:
     assignment.return_reminder = return_reminder(
       assignment.order.quote.delivery_by, checked_at,

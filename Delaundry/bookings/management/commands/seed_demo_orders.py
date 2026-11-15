@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
+from bookings import clock
 
 from accounts.models import CustomerProfile, User
 from bookings.availability import get_available_windows
@@ -24,7 +24,7 @@ class Command(BaseCommand):
     residence = Residence.objects.filter(name=options["residence"], is_active=True).first()
     if residence is None:
       raise CommandError("Choose an existing active residence.")
-    service_date = timezone.localdate() + timedelta(days=1)
+    service_date = clock.localdate() + timedelta(days=1)
     messages = []
 
     # Roll back the entire seed if a block is unavailable or a demo identity conflicts.

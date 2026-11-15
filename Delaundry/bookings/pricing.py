@@ -7,6 +7,8 @@ from functools import lru_cache
 
 from django.utils import timezone
 
+from bookings import clock
+
 from facilities.models import Machine
 from ml.features import ML_DIR, calendar_features
 from .models import LaundryOrder, MachineReservation, PriceQuote
@@ -86,7 +88,7 @@ def calculate_fees(predicted_requests, capacity):
 
 
 def price_window(residence, window, now=None):
-  now = now or timezone.now()
+  now = now or clock.now()
   if window["service_start"] <= now:
     raise ValueError("This pickup window has already started.")
   features = get_live_features(residence, window, now)
@@ -110,7 +112,7 @@ def price_window(residence, window, now=None):
 
 
 def save_quote(profile, window, price):
-  now = timezone.now()
+  now = clock.now()
   if not profile.block or window["block"] != profile.block:
     raise ValueError("The quote must use the customer's saved block.")
   if window["service_start"] <= now:
