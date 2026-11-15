@@ -67,7 +67,9 @@ def report_detail(request, report_id):
     pk=report_id,
   )
   assignment = JobAssignment.objects.select_related("worker__user").filter(order=report.order).first()
-  proof = DeliveryProof.objects.filter(assignment__order=report.order).first()
+  proof = DeliveryProof.objects.select_related("uploaded_by").filter(
+    assignment=assignment,
+  ).first() if assignment else None
   return render(request, "adminpanel/report_detail.html", {
     "report": report, "assignment": assignment, "proof": proof,
   })

@@ -6,7 +6,7 @@
     <div class="alert alert-danger" role="alert">{{ message }}</div>
   {% endfor %}
   <p>Hall: <strong>{{ quote.residence }}</strong>{% if quote.block %} &middot; {{ quote.get_block_display }}{% endif %} &middot; Unit: {{ quote.unit_number }}</p>
-  <p>{{ quote.service_date|date:"d M Y" }}: pickup {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}, delivery by {{ quote.delivery_by|time:"H:i" }} (Singapore time).</p>
+  <p>{{ quote.service_date|date:"d M Y" }}: pickup {{ quote.service_start|time:"H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }}, delivery by {{ quote.delivery_by|time:"H:i" }}</p>
   {% if order %}
     <div class="alert alert-info">
       Order #{{ order.pk }} &middot; Status: <strong>{{ order.get_status_display }}</strong>.
@@ -21,7 +21,7 @@
   {% elif quote.is_expired %}
     <div class="alert alert-warning">This quote has expired. Please choose a pickup time again to get a current quote.</div>
   {% else %}
-    <div class="alert alert-success">This price is fixed until {{ quote.expires_at|date:"d M Y, H:i:s" }} (Singapore time).</div>
+    <div class="alert alert-success">This price is fixed until {{ quote.expires_at|date:"d M Y, H:i:s" }}</div>
   {% endif %}
   <div class="card card-body mb-3">
     <h2 class="h5">Price breakdown (SGD)</h2>
@@ -40,7 +40,7 @@
     <p class="text-secondary">Worker and platform fees reflect expected demand relative to available laundry spaces. Washing and drying remain $2.00.</p>
   {% endif %}
   {% if not order %}
-    <p>This quote has not placed an order, reserved machines or charged you. Availability must be checked again when you submit a request.</p>
+    <p>This quote has not placed an order, reserved machines or charged you yet. Availability must be checked again when you submit a request.</p>
     {% if quote.block and not quote.is_expired %}
       <form method="post" action="{% url 'customerstorefront:submit_request' quote.pk %}" class="mb-3">
         {% csrf_token %}

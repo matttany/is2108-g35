@@ -20,10 +20,12 @@
     <h2 class="h5" id="proof-heading">Delivery proof</h2>
     {% if proof %}
       {% comment %}The photo view checks staff access again for every image request.{% endcomment %}
-      <a href="{% url 'bookings:delivery_photo' proof.pk %}">
+      <a href="{% url 'bookings:delivery_photo' proof.pk %}" target="_blank" rel="noopener">
         <img class="img-fluid rounded border" style="max-height: 420px;" loading="lazy" src="{% url 'bookings:delivery_photo' proof.pk %}" alt="Returned laundry for order {{ report.order_id }}">
       </a>
       <p class="text-secondary mt-2 mb-0">Select the photo to view it at full size.</p>
+      <p class="mt-3">Uploaded by {{ proof.uploaded_by.name|default:proof.uploaded_by.username }} on {{ proof.uploaded_at|date:"d M Y, H:i:s" }}.</p>
+      {% if proof.note %}<p class="text-break mb-0">{{ proof.note|linebreaksbr }}</p>{% endif %}
     {% else %}
       <p class="mb-0 text-secondary">No delivery proof has been uploaded for this order.</p>
     {% endif %}

@@ -1,7 +1,7 @@
 {% extends "accounts/base.html" %}
 
 {% block title %}Customer login | DeLaundry{% endblock %}
-{% block account_navigation %}{% endblock %}
+{% block account_navigation %}{% include "accounts/customer_nav.html" with hide_login_links=True %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">

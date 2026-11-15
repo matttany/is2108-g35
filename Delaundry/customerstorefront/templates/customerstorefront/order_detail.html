@@ -18,7 +18,7 @@
   {% elif order.status == "cancelled" or order.status == "rejected" %}
     <div class="alert alert-warning">This request is {{ order.get_status_display|lower }}.</div>
   {% endif %}
-  <p class="text-secondary">All times are Singapore time. Refresh this page to see the latest recorded updates.</p>
+  <p class="text-secondary">Refresh this page to see the latest recorded updates.</p>
   <div class="row g-4">
     <div class="col-12 col-lg-6">
       <section class="card card-body h-100" aria-labelledby="pickup-heading">
