@@ -1,0 +1,42 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Customer reports | DeLaundry{% endblock %}
+{% block content %}
+  <h1 class="h3">Customer reports</h1>
+  <form method="get" class="card card-body mb-4">
+    {% include "adminpanel/form_fields.html" %}
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Apply filters</button>
+      <a class="btn btn-outline-secondary" href="{% url 'adminpanel:report_list' %}">Reset</a>
+    </div>
+  </form>
+  {% if form.errors %}
+    <div class="alert alert-warning">Correct the filters above to view reports.</div>
+  {% else %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead><tr><th scope="col">Report / order</th><th scope="col">Customer</th><th scope="col">Hall</th><th scope="col">Category</th><th scope="col">Submitted</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+          {% for report in page %}
+            <tr>
+              <td><a href="{% url 'adminpanel:report_detail' report.pk %}">Report #{{ report.pk }}</a><br>Order #{{ report.order_id }}</td>
+              <td>{{ report.order.quote.customer.name }}</td>
+              <td>{{ report.order.quote.residence }}</td>
+              <td>{{ report.get_category_display }}</td>
+              <td>{{ report.created_at|date:"d M Y, H:i" }}</td>
+              <td>{{ report.get_status_display }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">No reports match these filters.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.has_other_pages %}
+      <nav aria-label="Report pages" class="d-flex gap-3">
+        {% if page.has_previous %}<a href="?{{ filter_query }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}
+        <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a href="?{{ filter_query }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}
+      </nav>
+    {% endif %}
+  {% endif %}
+{% endblock %}

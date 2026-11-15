@@ -2,7 +2,25 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
 from facilities.models import Residence
-from bookings.models import LaundryOrder
+from bookings.models import LaundryOrder, SupportRequest
+
+
+class ReportFilterForm(forms.Form):
+  residence = forms.ModelChoiceField(
+    label="Hall", queryset=Residence.objects.all().order_by("name"),
+    empty_label="All halls", required=False,
+    widget=forms.Select(attrs={"class": "form-select"}),
+  )
+  category = forms.ChoiceField(
+    label="Category", required=False,
+    choices=[("", "All categories"), *SupportRequest._meta.get_field("category").choices],
+    widget=forms.Select(attrs={"class": "form-select"}),
+  )
+  status = forms.ChoiceField(
+    label="Report status", required=False,
+    choices=[("", "All statuses"), *SupportRequest._meta.get_field("status").choices],
+    widget=forms.Select(attrs={"class": "form-select"}),
+  )
 
 
 class DashboardFilterForm(forms.Form):
