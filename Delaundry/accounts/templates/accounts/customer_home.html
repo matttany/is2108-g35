@@ -26,16 +26,13 @@
           {% if not profile %}
             <div class="alert alert-warning">Your customer profile is missing. Please contact staff for help.</div>
           {% elif not profile.block %}
-            <div class="alert alert-info">Choose your residential block before booking a pickup.</div>
+            <div class="alert alert-warning">Your residential block is missing. Please contact staff before booking a pickup.</div>
           {% endif %}
 
           <div class="d-flex flex-wrap gap-2 mt-4">
             <a class="btn btn-primary" href="{% url 'customerstorefront:availability' %}">Book a pickup</a>
             <a class="btn btn-outline-secondary" href="{% url 'customerstorefront:order_list' %}">My orders and progress</a>
           </div>
-          {% if profile %}
-            <a class="d-inline-block mt-3" href="{% url 'accounts:customer_block' %}">Update my residential block</a>
-          {% endif %}
         </div>
       </section>
     </div>

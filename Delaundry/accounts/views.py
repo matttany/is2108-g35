@@ -6,9 +6,9 @@ from .forms import CustomerRegistrationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.http import require_POST
 
-from .forms import CustomerLoginForm, CustomerBlockForm
+from .forms import CustomerLoginForm
 from .forms import WorkerRegistrationForm, WorkerLoginForm
 from .models import CustomerProfile, WorkerProfile
 from django.db import IntegrityError
@@ -73,21 +73,6 @@ def customer_home(request):
 def customer_logout(request):
   logout(request)
   return redirect("accounts:login")
-
-
-@login_required(login_url="accounts:login")
-@require_http_methods(["GET", "POST"])
-def customer_block(request):
-  if not request.user.is_active or request.user.role != "customer":
-    return HttpResponseForbidden("This page is for customers only.")
-  profile = CustomerProfile.objects.select_related("residence").filter(user=request.user).first()
-  if profile is None:
-    return HttpResponseForbidden("Your customer profile is missing. Please contact staff.")
-  form = CustomerBlockForm(request.POST if request.method == "POST" else None, instance=profile)
-  if request.method == "POST" and form.is_valid():
-    form.save()
-    return redirect("customerstorefront:availability")
-  return render(request, "accounts/customer_block.html", {"profile": profile, "form": form})
 
 
 def worker_register(request):

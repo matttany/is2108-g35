@@ -111,24 +111,6 @@ class CustomerRegistrationForm(UserCreationForm):
       return user
 
 
-class CustomerBlockForm(forms.ModelForm):
-    block = forms.ChoiceField(widget=forms.Select(attrs={"class": "form-select"}))
-
-    class Meta:
-        model = CustomerProfile
-        fields = ["block"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Derive the hall from the saved profile, never from submitted form data.
-        rooms = LaundryRoom.objects.filter(
-            residence=self.instance.residence, residence__is_active=True, is_active=True,
-        ).order_by("block")
-        self.fields["block"].choices = [("", "Select your block")] + [
-            (room.block, room.get_block_display()) for room in rooms
-        ]
-
-
 class CustomerLoginForm(AuthenticationForm):
     username = forms.EmailField(
         label="NUS Email",

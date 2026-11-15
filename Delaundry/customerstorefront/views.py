@@ -122,7 +122,8 @@ def availability(request):
   if profile is None:
     return HttpResponseForbidden("Your customer profile is missing. Please contact staff.")
   if not profile.block:
-    return redirect("accounts:customer_block")
+    # Customers use the block saved at registration; staff handle missing details.
+    return HttpResponseForbidden("Your residential block is missing. Please contact staff before booking a pickup.")
 
   data = request.POST if request.method == "POST" else request.GET
   form = AvailabilityForm(data if data else {"date": clock.localdate().isoformat()})
