@@ -205,8 +205,7 @@ class MachineSession(models.Model):
 
 class MachineReservation(models.Model):
   id = models.AutoField(primary_key=True)
-  order = models.ForeignKey(LaundryOrder,on_delete=models.PROTECT,related_name="reservations", null=True, blank=True)
-  assignment = models.ForeignKey(JobAssignment, on_delete=models.PROTECT, related_name="reservations", null=True, blank=True)
+  order = models.ForeignKey(LaundryOrder, on_delete=models.PROTECT, related_name="reservations")
   machine = models.ForeignKey('facilities.Machine', on_delete=models.PROTECT)
   service_date = models.DateField()
   window_start = models.TimeField(

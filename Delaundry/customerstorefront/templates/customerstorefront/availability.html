@@ -3,7 +3,7 @@
 {% block content %}
   <h1 class="h3">Choose a laundry pickup time</h1>
   <p>Hall: <strong>{{ profile.residence }}</strong> &middot; {{ profile.get_block_display }} &middot; Unit: {{ profile.unitNum }}</p>
-  <p class="text-secondary">Availability and prices are for your saved block only. <a href="{% url 'accounts:customer_block' %}">Update my block</a></p>
+  <p class="text-secondary">Availability and prices are for the residential block saved at registration.</p>
   <p class="text-secondary">Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
   <div class="alert alert-info">
     Selecting a window does not reserve machines or confirm a booking. Washer and dryer are reserved only when you submit a request. Confirmation still requires an approved worker to accept your request.
