@@ -66,8 +66,7 @@ def accept_order(user_id, order_id):
     room = machine.laundry_room
 
     if (
-      reservation.assignment_id is not None
-      or reservation.service_date != quote.service_date
+      reservation.service_date != quote.service_date
       or reservation.window_start != quote.window_start
       or room.residence_id != quote.residence_id
       or room.block != quote.block
