@@ -62,7 +62,6 @@ def delivery_proof(request, assignment_id):
     except OSError:
       form.add_error(None, "The photo could not be saved. Please try again.")
     else:
-      messages.success(request, "Delivery recorded. Your task is completed.")
       return redirect("workerpage:delivery_proof", assignment_id=assignment.pk)
   return render(request, "workerpage/delivery_proof.html", {
     "assignment": assignment, "quote": assignment.order.quote, "proof": proof, "form": form,
@@ -275,7 +274,7 @@ def accept_task(request, order_id):
     messages.success(
       request,
       f"Order #{assignment.order_id} accepted. "
-      f"Agreed payout: ${assignment.agreed_payout:.2f}.",
+      f"Payout: ${assignment.agreed_payout:.2f}.",
     )
 
   return redirect("workerpage:task_board")

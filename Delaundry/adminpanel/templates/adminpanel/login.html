@@ -1,6 +1,6 @@
 {% extends "accounts/login_base.html" %}
 {% block title %}Staff login | DeLaundry{% endblock %}
-{% block navigation %}
+{% block account_navigation %}
   {% url 'adminpanel:login' as staff_login_url %}
   {% include "accounts/customer_nav.html" with brand_label="DeLaundry staff" brand_href=staff_login_url %}
 {% endblock %}

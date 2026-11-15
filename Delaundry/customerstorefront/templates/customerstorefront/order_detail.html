@@ -84,10 +84,10 @@
         <li class="list-group-item d-flex align-items-start gap-2"{% if step.state == "Current" %} aria-current="step"{% endif %}>
           <div class="flex-grow-1">
             <strong>{{ step.label }}</strong>
-            <span class="badge {% if step.state == 'Current' %}text-bg-primary{% elif step.state == 'Recorded' or step.state == 'Reached' %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-2">{% if step.state == 'Recorded' or step.state == 'Reached' %}Completed{% elif step.state == 'Not recorded' %}Not completed{% else %}{{ step.state }}{% endif %}</span>
+            <span class="badge {% if step.state == 'Current' %}text-bg-primary{% elif step.state == 'Completed' %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-2">{{ step.state }}</span>
             {% if step.timestamp %}
               <small class="d-block text-secondary">{{ step.timestamp|date:"d M Y, H:i:s" }}</small>
-            {% elif step.state == "Current" or step.state == "Reached" %}
+            {% elif step.state == "Current" or step.state == "Completed" %}
               <small class="d-block text-secondary">Time not recorded</small>
             {% endif %}
           </div>
