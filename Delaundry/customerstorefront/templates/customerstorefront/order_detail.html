@@ -18,7 +18,7 @@
   {% elif order.status == "cancelled" or order.status == "rejected" %}
     <div class="alert alert-warning">This request is {{ order.get_status_display|lower }}.</div>
   {% endif %}
-  <p class="text-secondary">All times are Singapore time. Refresh this page to see the latest recorded updates.</p>
+  <p class="text-secondary">Refresh this page to see the latest recorded updates.</p>
   <div class="row g-4">
     <div class="col-12 col-lg-6">
       <section class="card card-body h-100" aria-labelledby="pickup-heading">
@@ -84,7 +84,7 @@
         <li class="list-group-item d-flex align-items-start gap-2"{% if step.state == "Current" %} aria-current="step"{% endif %}>
           <div class="flex-grow-1">
             <strong>{{ step.label }}</strong>
-            <span class="badge {% if step.state == 'Current' %}text-bg-primary{% elif step.state == 'Recorded' or step.state == 'Reached' %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-2">{{ step.state }}</span>
+            <span class="badge {% if step.state == 'Current' %}text-bg-primary{% elif step.state == 'Recorded' or step.state == 'Reached' %}text-bg-success{% else %}text-bg-secondary{% endif %} ms-2">{% if step.state == 'Recorded' or step.state == 'Reached' %}Completed{% elif step.state == 'Not recorded' %}Not completed{% else %}{{ step.state }}{% endif %}</span>
             {% if step.timestamp %}
               <small class="d-block text-secondary">{{ step.timestamp|date:"d M Y, H:i:s" }}</small>
             {% elif step.state == "Current" or step.state == "Reached" %}

@@ -275,7 +275,7 @@ def accept_task(request, order_id):
     messages.success(
       request,
       f"Order #{assignment.order_id} accepted. "
-      f"Agreed payout: S${assignment.agreed_payout:.2f}.",
+      f"Agreed payout: ${assignment.agreed_payout:.2f}.",
     )
 
   return redirect("workerpage:task_board")

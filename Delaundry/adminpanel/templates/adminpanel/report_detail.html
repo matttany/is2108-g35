@@ -12,9 +12,21 @@
       <dt class="col-sm-4">Submitted</dt><dd class="col-sm-8">{{ report.created_at|date:"d M Y, H:i:s" }}</dd>
       <dt class="col-sm-4">Report status</dt><dd class="col-sm-8">{{ report.get_status_display }}</dd>
     </dl>
-    <h2 class="h5">Customer description</h2>
+    <h2 class="h5">Customer Report Details</h2>
     <div class="text-break">{{ report.description|linebreaksbr }}</div>
   </div>
+  <section class="card card-body mb-4" aria-labelledby="proof-heading">
+    <h2 class="h5" id="proof-heading">Delivery proof</h2>
+    {% if proof %}
+      <a href="{% url 'bookings:delivery_photo' proof.pk %}" target="_blank" rel="noopener">
+        <img class="img-fluid rounded border mb-3" src="{% url 'bookings:delivery_photo' proof.pk %}" alt="Delivery proof for order #{{ report.order_id }}">
+      </a>
+      <p>Uploaded by {{ proof.uploaded_by.name|default:proof.uploaded_by.username }} on {{ proof.uploaded_at|date:"d M Y, H:i:s" }}.</p>
+      {% if proof.note %}<p class="text-break mb-0">{{ proof.note|linebreaksbr }}</p>{% endif %}
+    {% else %}
+      <p class="text-secondary mb-0">No delivery proof has been submitted for this order. Report was made while order was ongoing.</p>
+    {% endif %}
+  </section>
   <section class="card card-body" aria-labelledby="worker-heading">
     <h2 class="h5" id="worker-heading">Assigned worker</h2>
     {% if assignment %}

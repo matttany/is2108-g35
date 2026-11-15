@@ -31,7 +31,7 @@
               <td>Order #{{ assignment.order_id }}</td>
               <td>{{ assignment.completed_at|date:"d M Y, H:i" }}</td>
               <td><span class="badge text-bg-success">Earned</span></td>
-              <td class="text-end">S${{ assignment.agreed_payout|floatformat:2 }}</td>
+              <td class="text-end">${{ assignment.agreed_payout|floatformat:2 }}</td>
             </tr>
           {% empty %}
             <tr><td colspan="4" class="text-secondary">You have no earnings yet.</td></tr>
