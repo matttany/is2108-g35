@@ -1,0 +1,29 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Report #{{ report.pk }} | DeLaundry{% endblock %}
+{% block content %}
+  <a href="{% url 'adminpanel:report_list' %}">Back to customer reports</a>
+  <h1 class="h3 mt-3">Report #{{ report.pk }}</h1>
+  <div class="card card-body mb-4">
+    <dl class="row">
+      <dt class="col-sm-4">Order</dt><dd class="col-sm-8">#{{ report.order_id }} &middot; {{ report.order.get_status_display }}</dd>
+      <dt class="col-sm-4">Customer</dt><dd class="col-sm-8">{{ report.order.quote.customer.name }} &middot; {{ report.order.quote.customer.email }}</dd>
+      <dt class="col-sm-4">Saved address</dt><dd class="col-sm-8">{{ report.order.quote.residence }}, Block {{ report.order.quote.block }}, Unit {{ report.order.quote.unit_number }}</dd>
+      <dt class="col-sm-4">Category</dt><dd class="col-sm-8">{{ report.get_category_display }}</dd>
+      <dt class="col-sm-4">Submitted</dt><dd class="col-sm-8">{{ report.created_at|date:"d M Y, H:i:s" }}</dd>
+      <dt class="col-sm-4">Report status</dt><dd class="col-sm-8">{{ report.get_status_display }}</dd>
+    </dl>
+    <h2 class="h5">Customer description</h2>
+    <div class="text-break">{{ report.description|linebreaksbr }}</div>
+  </div>
+  <section class="card card-body" aria-labelledby="worker-heading">
+    <h2 class="h5" id="worker-heading">Assigned worker</h2>
+    {% if assignment %}
+      <p>{{ assignment.worker.user.name }} &middot; {{ assignment.worker.user.email }}</p>
+      <p>Approval status: <strong>{{ assignment.worker.get_approval_status_display }}</strong></p>
+      <p>Review the report before deciding whether suspension is appropriate. Opening this report does not change the worker's status.</p>
+      <a class="btn btn-outline-secondary align-self-start" href="{% url 'adminpanel:worker_review' assignment.worker_id %}">Review worker / suspend</a>
+    {% else %}
+      <p class="mb-0 text-secondary">No worker is assigned to this order.</p>
+    {% endif %}
+  </section>
+{% endblock %}

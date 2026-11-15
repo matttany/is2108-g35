@@ -2,6 +2,18 @@
 {% block title %}Operations dashboard | DeLaundry{% endblock %}
 {% block content %}
   <h1 class="h3">Operations dashboard</h1>
+  <section class="card card-body mb-4" aria-labelledby="reports-heading">
+    <h2 class="h5" id="reports-heading">Customer reports</h2>
+    <p>{{ open_report_count }} open report{{ open_report_count|pluralize }} across all halls.</p>
+    <ul class="mb-3">
+      {% for report in recent_reports %}
+        <li><a href="{% url 'adminpanel:report_detail' report.pk %}">Report #{{ report.pk }} &middot; Order #{{ report.order_id }} &middot; {{ report.get_category_display }}</a> &mdash; {{ report.get_status_display }}</li>
+      {% empty %}
+        <li>No customer reports have been submitted.</li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'adminpanel:report_list' %}">View all customer reports</a>
+  </section>
   <form method="get" action="{% url 'adminpanel:dashboard' %}" class="card card-body mb-4">
     {% include "adminpanel/form_fields.html" %}
     <div class="d-flex gap-2">

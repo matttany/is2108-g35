@@ -2,12 +2,14 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import WorkerProfile
-from .forms import DashboardFilterForm, StaffLoginForm, WorkerApprovalForm, WorkerFilterForm
+from bookings.models import JobAssignment, SupportRequest
+from .forms import DashboardFilterForm, ReportFilterForm, StaffLoginForm, WorkerApprovalForm, WorkerFilterForm
 from .dashboard import dashboard_data
 
 
@@ -17,10 +19,57 @@ def dashboard(request):
   if not request.user.is_active or not request.user.is_staff:
     return HttpResponseForbidden("This page is for active staff accounts only.")
   form = DashboardFilterForm(request.GET)
-  context = {"form": form, "stats": None}
+  context = {
+    "form": form,
+    "stats": None,
+    "open_report_count": SupportRequest.objects.filter(status="open").count(),
+    "recent_reports": SupportRequest.objects.select_related("order__quote__customer")
+    .order_by("-created_at", "-pk")[:5],
+  }
   if form.is_valid():
     context["stats"] = dashboard_data(form.cleaned_data)
   return render(request, "adminpanel/dashboard.html", context)
+
+
+@login_required(login_url="adminpanel:login")
+@require_GET
+def report_list(request):
+  if not request.user.is_active or not request.user.is_staff:
+    return HttpResponseForbidden("This page is for active staff accounts only.")
+  form = ReportFilterForm(request.GET)
+  reports = SupportRequest.objects.select_related(
+    "order__quote__customer", "order__quote__residence",
+  )
+  if form.is_valid():
+    if form.cleaned_data["residence"]:
+      reports = reports.filter(order__quote__residence=form.cleaned_data["residence"])
+    if form.cleaned_data["category"]:
+      reports = reports.filter(category=form.cleaned_data["category"])
+    if form.cleaned_data["status"]:
+      reports = reports.filter(status=form.cleaned_data["status"])
+  else:
+    reports = reports.none()
+  page = Paginator(reports.order_by("-created_at", "-pk"), 20).get_page(request.GET.get("page"))
+  params = request.GET.copy()
+  params.pop("page", None)
+  return render(request, "adminpanel/report_list.html", {
+    "form": form, "page": page, "filter_query": params.urlencode(),
+  })
+
+
+@login_required(login_url="adminpanel:login")
+@require_GET
+def report_detail(request, report_id):
+  if not request.user.is_active or not request.user.is_staff:
+    return HttpResponseForbidden("This page is for active staff accounts only.")
+  report = get_object_or_404(
+    SupportRequest.objects.select_related("order__quote__customer", "order__quote__residence"),
+    pk=report_id,
+  )
+  assignment = JobAssignment.objects.select_related("worker__user").filter(order=report.order).first()
+  return render(request, "adminpanel/report_detail.html", {
+    "report": report, "assignment": assignment,
+  })
 
 
 def staff_login(request):
