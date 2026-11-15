@@ -16,6 +16,7 @@
           <a href="{% url 'workerpage:my_tasks' %}">My tasks</a>
           <a href="{% url 'workerpage:earnings' %}">My earnings</a>
           <a href="{% url 'accounts:worker_home' %}">My account</a>
+          <span class="text-secondary">{{ user.name }}</span>
           <form method="post" action="{% url 'accounts:worker_logout' %}">
             {% csrf_token %}
             <button class="btn btn-outline-secondary" type="submit">Log out</button>

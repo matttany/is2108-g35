@@ -229,9 +229,13 @@ class WorkerRegistrationForm(UserCreationForm):
 
 class WorkerLoginForm(AuthenticationForm):
     username = forms.EmailField(
-        label="NUS email",
+        label="NUS Email",
         max_length=150,
-        widget=forms.EmailInput(attrs={"class": "form-control", "autocomplete": "username"}),
+        widget=forms.EmailInput(attrs={
+          "class": "form-control",
+          "autocomplete": "username",
+          "placeholder": "Eg. e1234567@u.nus.edu",
+        }),
     )
     password = forms.CharField(
         label="Password",
