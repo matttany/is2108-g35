@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import WorkerProfile
-from bookings.models import JobAssignment, SupportRequest
+from bookings.models import DeliveryProof, JobAssignment, SupportRequest
 from .forms import DashboardFilterForm, ReportFilterForm, StaffLoginForm, WorkerApprovalForm, WorkerFilterForm
 from .dashboard import dashboard_data
 
@@ -67,8 +67,11 @@ def report_detail(request, report_id):
     pk=report_id,
   )
   assignment = JobAssignment.objects.select_related("worker__user").filter(order=report.order).first()
+  proof = DeliveryProof.objects.select_related("uploaded_by").filter(
+    assignment=assignment,
+  ).first() if assignment else None
   return render(request, "adminpanel/report_detail.html", {
-    "report": report, "assignment": assignment,
+    "report": report, "assignment": assignment, "proof": proof,
   })
 
 

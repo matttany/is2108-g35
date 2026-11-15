@@ -5,7 +5,6 @@
   <p>{{ quote.residence }} &middot; Block {{ quote.block }} &middot; Unit {{ quote.unit_number }}</p>
   <p>Status: <strong>{{ assignment.order.get_status_display }}</strong></p>
   {% if proof %}
-    <div class="alert alert-success">Delivery has been recorded. This proof cannot be replaced.</div>
     <p>Completed: {{ assignment.completed_at|date:"d M Y, H:i:s" }} (Singapore time)</p>
     <img class="img-fluid rounded border mb-3" src="{% url 'bookings:delivery_photo' proof.pk %}" alt="Returned laundry for order {{ assignment.order_id }}">
     <p>Uploaded by {{ proof.uploaded_by.name|default:proof.uploaded_by.username }} on {{ proof.uploaded_at|date:"d M Y, H:i:s" }}.</p>
