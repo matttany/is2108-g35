@@ -5,7 +5,7 @@
   <div class="card card-body mb-3">
     <p>{{ quote.residence }} &middot; Block {{ quote.block }} &middot; Unit {{ quote.unit_number }}</p>
     <p>Pickup: {{ quote.service_start|date:"d M Y, H:i" }}&ndash;{{ quote.pickup_end|time:"H:i" }} (Singapore time)</p>
-    <p>Saved price: S${{ quote.total|floatformat:2 }}</p>
+    <p>Saved price: ${{ quote.total|floatformat:2 }}</p>
     <p class="mb-0">Status: {{ order.get_status_display }}</p>
   </div>
   {% if cancellation_error %}

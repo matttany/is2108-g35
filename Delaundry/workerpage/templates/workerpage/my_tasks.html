@@ -48,8 +48,8 @@
             </ul>
           </dd>
 
-          <dt class="col-sm-4">Agreed payout</dt>
-          <dd class="col-sm-8">S${{ assignment.agreed_payout|floatformat:2 }}</dd>
+          <dt class="col-sm-4">Payout</dt>
+          <dd class="col-sm-8">${{ assignment.agreed_payout|floatformat:2 }}</dd>
 
           <dt class="col-sm-4">Accepted</dt>
           <dd class="col-sm-8">{{ assignment.accepted_at|date:"d M Y, H:i" }}</dd>
