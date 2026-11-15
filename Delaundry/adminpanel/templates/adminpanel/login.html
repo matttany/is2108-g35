@@ -1,9 +1,5 @@
 {% extends "accounts/login_base.html" %}
 {% block title %}Staff login | DeLaundry{% endblock %}
-{% block account_navigation %}
-  {% url 'adminpanel:login' as staff_login_url %}
-  {% include "accounts/customer_nav.html" with brand_label="DeLaundry staff" brand_href=staff_login_url %}
-{% endblock %}
 {% block login_content %}
           <h1 class="h3">Staff login</h1>
           <form method="post" action="{% url 'adminpanel:login' %}">
