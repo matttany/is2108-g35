@@ -1,5 +1,5 @@
 <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Customer navigation">
-  <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% if user.is_authenticated and user.role == 'customer' %}{% url 'accounts:customer_home' %}{% else %}{% url 'accounts:login' %}{% endif %}">DeLaundry</a>
+  <a class="fs-4 fw-bold text-decoration-none me-auto d-inline-flex align-items-center gap-2" href="{% if user.is_authenticated and user.role == 'customer' %}{% url 'accounts:customer_home' %}{% else %}{% url 'accounts:login' %}{% endif %}">{% include "bookings/brand.html" %}</a>
   {% if user.is_authenticated and user.role == 'customer' %}
     <a href="{% url 'accounts:customer_home' %}">My account</a>
     <a href="{% url 'customerstorefront:order_list' %}">My orders</a>
@@ -8,7 +8,7 @@
       {% csrf_token %}
       <button class="btn btn-outline-secondary" type="submit">Log out</button>
     </form>
-  {% else %}
+  {% elif not hide_login_links %}
     <a href="{% url 'adminpanel:login' %}">Staff login</a>
     <a href="{% url 'accounts:worker_login' %}">Worker login</a>
     <a href="{% url 'accounts:login' %}">Customer login</a>

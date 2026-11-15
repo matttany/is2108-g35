@@ -20,10 +20,21 @@ def get_order_timeline(order, assignment, sessions):
       timestamps["out_for_return"] = assignment.out_for_return_at
     if assignment.completed_at is not None:
       timestamps["delivered"] = assignment.completed_at
+  cycle_sessions = {"washing": [], "drying": []}
   for session in sessions:
     stage = {"washer": "washing", "dryer": "drying"}.get(session.machine.machine_type)
     if stage is not None:
-      timestamps[stage] = min(timestamps.get(stage, session.started_at), session.started_at)
+      cycle_sessions[stage].append(session)
+
+  completed_cycles = set()
+  for stage, stage_sessions in cycle_sessions.items():
+    if stage_sessions:
+      # Starting a cycle does not mean it has been completed.
+      if all(session.ended_at is not None for session in stage_sessions):
+        completed_cycles.add(stage)
+        timestamps[stage] = max(session.ended_at for session in stage_sessions)
+      else:
+        timestamps[stage] = min(session.started_at for session in stage_sessions)
 
   stage_codes = [code for code, label in ORDER_STAGES]
   current_index = stage_codes.index(order.status) if order.status in stage_codes else None
@@ -31,15 +42,18 @@ def get_order_timeline(order, assignment, sessions):
   timeline = []
   for index, (code, label) in enumerate(ORDER_STAGES):
     timestamp = timestamps.get(code)
-    if code == order.status:
+    if code in completed_cycles:
+      state = "Completed"
+    elif code == order.status:
       state = "Current"
+    elif code in cycle_sessions:
+      state = "Not complete"
     elif timestamp is not None:
-      state = "Recorded"
+      state = "Completed"
     elif current_index is not None and index < current_index:
-      state = "Reached"
+      state = "Completed"
     else:
-      # A missing update does not prove that the stage has not happened.
-      state = "Not recorded"
+      state = "Not complete"
     timeline.append({"label": label, "state": state, "timestamp": timestamp})
 
   if stopped:
