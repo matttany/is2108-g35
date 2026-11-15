@@ -1,9 +1,10 @@
 <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Customer navigation">
-  <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% if user.is_authenticated and user.role == 'customer' %}{% url 'accounts:customer_home' %}{% else %}{% url 'accounts:login' %}{% endif %}">DeLaundry</a>
+  <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% if brand_href %}{{ brand_href }}{% elif user.is_authenticated and user.role == 'customer' %}{% url 'accounts:customer_home' %}{% else %}{% url 'accounts:login' %}{% endif %}">{{ brand_label|default:"DeLaundry" }}</a>
   {% if user.is_authenticated and user.role == 'customer' %}
     <a href="{% url 'accounts:customer_home' %}">My account</a>
     <a href="{% url 'customerstorefront:order_list' %}">My orders</a>
     <a href="{% url 'customerstorefront:availability' %}">Pickup times</a>
+    <span class="text-secondary">{{ user.name }}</span>
     <form method="post" action="{% url 'accounts:logout' %}" class="mb-0">
       {% csrf_token %}
       <button class="btn btn-outline-secondary" type="submit">Log out</button>

@@ -3,11 +3,42 @@
 {% block title %}Customer home | DeLaundry{% endblock %}
 
 {% block content %}
-  <h2>Welcome, {{ request.user.name }}</h2>
-  <p>You are now logged in as a customer.</p> {# eventually link to customer profile #}
+  <div class="row justify-content-center py-3">
+    <div class="col-12 col-md-9 col-lg-7">
+      <section class="card shadow-sm">
+        <div class="card-body p-4">
+          <h1 class="h3">Welcome, {{ user.name }}</h1>
+          <p class="text-secondary">Your laundry-customer account</p>
 
-  <p><a href="{% url 'customerstorefront:availability' %}">Check laundry pickup times</a></p>
-  <p><a href="{% url 'customerstorefront:order_list' %}">View my orders and progress</a></p>
-  <p><a href="{% url 'accounts:customer_block' %}">Save or update my residential block</a></p>
+          <dl class="row mt-4">
+            <dt class="col-sm-4">NUS email</dt>
+            <dd class="col-sm-8 text-break">{{ user.email }}</dd>
+            {% if profile %}
+              <dt class="col-sm-4">Hall</dt>
+              <dd class="col-sm-8">{{ profile.residence }}</dd>
+              <dt class="col-sm-4">Block</dt>
+              <dd class="col-sm-8">{{ profile.get_block_display|default:"Not selected" }}</dd>
+              <dt class="col-sm-4">Unit</dt>
+              <dd class="col-sm-8">{{ profile.unitNum }}</dd>
+            {% endif %}
+          </dl>
+
+          {% if not profile %}
+            <div class="alert alert-warning">Your customer profile is missing. Please contact staff for help.</div>
+          {% elif not profile.block %}
+            <div class="alert alert-info">Choose your residential block before booking a pickup.</div>
+          {% endif %}
+
+          <div class="d-flex flex-wrap gap-2 mt-4">
+            <a class="btn btn-primary" href="{% url 'customerstorefront:availability' %}">Book a pickup</a>
+            <a class="btn btn-outline-secondary" href="{% url 'customerstorefront:order_list' %}">My orders and progress</a>
+          </div>
+          {% if profile %}
+            <a class="d-inline-block mt-3" href="{% url 'accounts:customer_block' %}">Update my residential block</a>
+          {% endif %}
+        </div>
+      </section>
+    </div>
+  </div>
 
 {% endblock %}

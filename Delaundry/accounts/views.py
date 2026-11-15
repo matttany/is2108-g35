@@ -66,6 +66,7 @@ def customer_home(request):
   return render(
     request,
     "accounts/customer_home.html",
+    {"profile": CustomerProfile.objects.select_related("residence").filter(user=request.user).first()},
   )
 
 @require_POST
