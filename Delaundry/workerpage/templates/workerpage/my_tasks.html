@@ -4,11 +4,10 @@
 
 {% block content %}
   <h1 class="h3">My ongoing tasks</h1>
-  <p class="text-secondary">Your assigned laundry jobs. All times are Singapore time.</p>
   <p class="small text-secondary">
     Reminders checked at {{ checked_at|date:"d M Y, H:i:s" }}.
     <a href="{% url 'workerpage:my_tasks' %}">Refresh reminders</a> to update the times.
-    Cycles and order statuses do not finish automatically.
+    Cycles and order statuses will have to be updated by you.
   </p>
 
   {% for assignment in assignments %}

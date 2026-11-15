@@ -9,17 +9,7 @@
   </head>
   <body class="bg-light">
     <header class="bg-white border-bottom">
-      <nav class="container py-3 d-flex flex-wrap align-items-center gap-3" aria-label="Customer navigation">
-        <a class="fs-4 fw-bold text-decoration-none me-auto" href="{% url 'accounts:login' %}">
-          DeLaundry
-        </a>
-    
-
-        <a href="{% url 'adminpanel:login' %}">Staff login</a>
-        <a href="{% url 'accounts:worker_login' %}">Worker login</a>
-        <a href="{% url 'accounts:login' %}">Customer login</a>
-
-      </nav>
+      {% include "accounts/customer_nav.html" %}
     </header>
     {% include "bookings/demo_banner.html" %}
 

@@ -4,10 +4,9 @@
   <h1 class="h3">Choose a laundry pickup time</h1>
   <p>Hall: <strong>{{ profile.residence }}</strong> &middot; {{ profile.get_block_display }} &middot; Unit: {{ profile.unitNum }}</p>
   <p class="text-secondary">Availability and prices are for your saved block only. <a href="{% url 'accounts:customer_block' %}">Update my block</a></p>
-  <p class="text-secondary">All times are Singapore time. Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
+  <p class="text-secondary">Washing and drying take 30 minutes each. Pickup is within the first 15 minutes; laundry is returned by the delivery deadline.</p>
   <div class="alert alert-info">
-    Availability is provisional. Selecting a window does not reserve machines or confirm a booking.
-    Submitting a request reserves a washer and dryer. Confirmation still requires an approved worker to accept your request.
+    Selecting a window does not reserve machines or confirm a booking. Washer and dryer are reserved only when you submit a request. Confirmation still requires an approved worker to accept your request.
   </div>
 
   <form class="card card-body mb-4" method="get" action="{% url 'customerstorefront:availability' %}">
@@ -27,7 +26,7 @@
   {% if not profile.residence.is_active %}
     <div class="alert alert-warning">Your hall is currently unavailable for laundry bookings.</div>
   {% elif windows %}
-    <p>Prices below are estimates in SGD. Select a time to review an itemised quote, valid for 15 minutes or until pickup starts, whichever comes first.</p>
+    <p>Select a time to review an itemised quote, valid for 15 minutes or until pickup starts, whichever comes first.</p>
     <form method="post" action="{% url 'customerstorefront:availability' %}">
       {% csrf_token %}
       <input type="hidden" name="date" value="{{ form.cleaned_data.date|date:'Y-m-d' }}">
