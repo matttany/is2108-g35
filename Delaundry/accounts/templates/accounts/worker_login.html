@@ -1,6 +1,6 @@
-{% extends "accounts/worker_base.html" %}
+{% extends "accounts/login_base.html" %}
 {% block title %}Worker login | DeLaundry{% endblock %}
-{% block content %}
+{% block login_content %}
   <h1 class="h3">Worker login</h1>
   <form method="post" action="{% url 'accounts:worker_login' %}">
     {% csrf_token %}
