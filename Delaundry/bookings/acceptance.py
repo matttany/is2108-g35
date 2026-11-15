@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from bookings import clock
 
 from accounts.models import User, WorkerProfile
 from .models import JobAssignment, LaundryOrder
@@ -79,7 +79,7 @@ def accept_order(user_id, order_id):
         "The reserved machines are no longer suitable."
       )
 
-  if quote.service_start <= timezone.now():
+  if quote.service_start <= clock.now():
     raise ValidationError("This pickup window has already started.")
 
   updated = (

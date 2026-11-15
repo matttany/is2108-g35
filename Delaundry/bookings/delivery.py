@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from bookings import clock
 
 from accounts.models import User, WorkerProfile
 from facilities.models import Machine
@@ -121,7 +121,7 @@ def complete_delivery(user_id, assignment_id, photo, note=""):
           return existing
         raise ValidationError("This task has inconsistent delivery records. Please contact staff.")
 
-      now = timezone.now()
+      now = clock.now()
       check_delivery_stages(assignment, order, now)
       clean_photo = prepare_delivery_photo(photo)
       note = note.strip()

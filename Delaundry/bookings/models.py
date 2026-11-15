@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models.functions import Round
 from django.utils import timezone
+
+from bookings import clock
 from facilities.models import BLOCK_CHOICES
 from .storage import proof_storage, proof_upload_path
 
@@ -20,7 +22,7 @@ class PriceQuote(models.Model):
   unit_number = models.CharField(max_length=8)
   service_date = models.DateField()
   window_start = models.TimeField(choices=[(start, start.strftime("%H:%M")) for start in SERVICE_START_TIMES])
-  created_at = models.DateTimeField(default=timezone.now)
+  created_at = models.DateTimeField(default=clock.now)
   expires_at = models.DateTimeField()
 
   # Store the prices shown to the customer; later model runs must not change them.
@@ -49,7 +51,7 @@ class PriceQuote(models.Model):
 
   @property
   def is_expired(self):
-    return timezone.now() >= self.expires_at or timezone.now() >= self.service_start
+    return clock.now() >= self.expires_at or clock.now() >= self.service_start
 
   class Meta:
     constraints = [
@@ -75,7 +77,7 @@ class LaundryOrder(models.Model):
   id = models.AutoField(primary_key=True)
   # Each submitted request uses one saved quote; the same quote cannot create two orders.
   quote = models.OneToOneField(PriceQuote, on_delete=models.PROTECT)
-  created_at = models.DateTimeField(default=timezone.now, db_index=True)
+  created_at = models.DateTimeField(default=clock.now, db_index=True)
   # Historical cancelled orders may not have a recorded cancellation time.
   cancelled_at = models.DateTimeField(null=True, blank=True)
   status = models.CharField(
@@ -118,7 +120,7 @@ class SupportRequest(models.Model):
     ("damaged", "Damaged laundry"), ("other", "Other problem"),
   ])
   description = models.TextField(max_length=2000)
-  created_at = models.DateTimeField(default=timezone.now)
+  created_at = models.DateTimeField(default=clock.now)
   status = models.CharField(max_length=10, choices=[("open", "Open"), ("resolved", "Resolved")], default="open")
 
   class Meta:
@@ -139,7 +141,7 @@ class JobAssignment(models.Model):
     max_digits=5,
     decimal_places=2,
   )
-  accepted_at = models.DateTimeField(default=timezone.now)
+  accepted_at = models.DateTimeField(default=clock.now)
   picked_up_at = models.DateTimeField(null=True, blank=True)
   out_for_return_at = models.DateTimeField(null=True, blank=True)
   # A timestamp marks completion without a second assignment status to maintain.
@@ -166,7 +168,7 @@ class DeliveryProof(models.Model):
   photo = models.ImageField(storage=proof_storage, upload_to=proof_upload_path)
   note = models.CharField(max_length=500, blank=True)
   uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-  uploaded_at = models.DateTimeField(default=timezone.now)
+  uploaded_at = models.DateTimeField(default=clock.now)
 
   class Meta:
     constraints = [
@@ -212,7 +214,7 @@ class WindowAllocation(models.Model):
 class MachineSession(models.Model):
   assignment = models.ForeignKey(JobAssignment,on_delete=models.PROTECT,related_name="sessions")
   machine = models.ForeignKey("facilities.Machine",on_delete=models.PROTECT,related_name="sessions",)
-  started_at = models.DateTimeField(default=timezone.now)
+  started_at = models.DateTimeField(default=clock.now)
   expected_end = models.DateTimeField()
   ended_at = models.DateTimeField(null=True, blank=True)
 
@@ -250,7 +252,7 @@ class MachineReservation(models.Model):
     choices=[("reserved", "Reserved"), ("released", "Released")],
     default="reserved",
   )
-  created_at = models.DateTimeField(auto_now_add=True)
+  created_at = models.DateTimeField(default=clock.now, editable=False)
 
   class Meta:
     constraints = [

@@ -4,6 +4,8 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from bookings import clock
+
 from accounts.models import User
 from .models import DeliveryProof, JobAssignment, LaundryOrder
 
@@ -11,7 +13,7 @@ from .models import DeliveryProof, JobAssignment, LaundryOrder
 def cancellation_error(order, assignment):
   if order.status not in ["requested", "confirmed"]:
     return "Only requested or confirmed orders can be cancelled."
-  if timezone.now() >= order.quote.service_start:
+  if clock.now() >= order.quote.service_start:
     return "Cancellation closes when the pickup window starts."
   if assignment is not None:
     if (
@@ -40,7 +42,7 @@ def cancel_order(user_id, order_id):
   error = cancellation_error(order, assignment)
   if error:
     raise ValidationError(error)
-  now = timezone.now()
+  now = clock.now()
   if now >= order.quote.service_start:
     raise ValidationError("Cancellation closes when the pickup window starts.")
   changed = LaundryOrder.objects.filter(pk=order.pk, status__in=["requested", "confirmed"]).update(

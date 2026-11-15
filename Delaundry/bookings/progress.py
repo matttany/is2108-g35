@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from bookings import clock
 
 from accounts.models import User, WorkerProfile
 from facilities.models import Machine
@@ -29,7 +29,7 @@ def update_task(user_id, assignment_id, action):
   )
   order = LaundryOrder.objects.select_for_update().get(pk=assignment.order_id)
   quote = order.quote
-  now = timezone.now()
+  now = clock.now()
 
   if action == "collect":
     if not quote.service_start <= now <= quote.pickup_end:

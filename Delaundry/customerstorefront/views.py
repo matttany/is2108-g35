@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db import IntegrityError, OperationalError, connection, transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from bookings import clock
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
@@ -125,7 +125,7 @@ def availability(request):
     return redirect("accounts:customer_block")
 
   data = request.POST if request.method == "POST" else request.GET
-  form = AvailabilityForm(data if data else {"date": timezone.localdate().isoformat()})
+  form = AvailabilityForm(data if data else {"date": clock.localdate().isoformat()})
   if request.method == "POST":
     form.fields["window_start"].required = True
   windows = []
@@ -153,7 +153,7 @@ def availability(request):
         return redirect("customerstorefront:quote_detail", quote_id=quote.pk)
 
     # Time may have advanced since availability was fetched (or a POST was rejected).
-    pricing_time = timezone.now()
+    pricing_time = clock.now()
     windows = [window for window in windows if window["service_start"] > pricing_time]
     if selected_window is not None and selected_window not in windows:
       selected_window = None

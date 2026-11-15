@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 
+from bookings import clock
+
 from facilities.models import LaundryRoom, Machine
 from .models import MachineReservation, SERVICE_START_TIMES
 
@@ -10,7 +12,7 @@ BOOKING_DAYS_AHEAD = 7
 
 
 def get_available_windows(residence, service_date, block):
-  now = timezone.localtime()
+  now = clock.localtime()
   if not residence.is_active or not block:
     return []
   if service_date < now.date() or service_date > now.date() + timedelta(days=BOOKING_DAYS_AHEAD):
